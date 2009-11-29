@@ -60,7 +60,8 @@ public class GenerateVersionFile extends Task {
     }
 
     private File _baseDir;
-
+    private String _propertyPrefix;
+    
     public File getBaseDir() {
         return _baseDir;
     }
@@ -79,13 +80,15 @@ public class GenerateVersionFile extends Task {
 
             final String lastTag = getLastTag(r);
 
-
             log( "Currently on branch " + branch + " which is " + ( dirty ? "dirty" : "clean"), Project.MSG_INFO );
-            log( "Last Commit " + lastCommit , Project.MSG_INFO );
-            log( "Last Tag " + lastTag , Project.MSG_INFO );
+            log( "Last Commit: " + lastCommit , Project.MSG_INFO );
+            log( "Last Tag: " + ( StringUtils.isEmpty( lastTag ) ? "unknown" : lastTag ), Project.MSG_INFO );
 
-
-
+            getProject().setProperty( pefixName("git.branch" ), branch );
+            getProject().setProperty( pefixName("git.dirty" ), String.valueOf( dirty ) );
+            getProject().setProperty( pefixName("git.commit" ), lastCommit );
+            getProject().setProperty( pefixName("git.tag" ), lastTag );
+            
         } catch ( final IOException e ) {
             throw new BuildException(e);
         } finally {
@@ -93,7 +96,17 @@ public class GenerateVersionFile extends Task {
                 r.close();
             }
         }
+    }
 
+    private String pefixName( final String string ) {
+        final String propertyPrefix = getPropertyPrefix();
+        
+        if (StringUtils.isNotBlank( propertyPrefix ) ) {
+            return propertyPrefix  + "." + string;
+        }
+        
+        return string;
+        
     }
 
     private String getLastTag( final Repository r ) throws IOException {
@@ -116,8 +129,6 @@ public class GenerateVersionFile extends Task {
             }
         }
 
-
-
         for ( final ObjectId parentId : commit.getParentIds() ) {
             final Commit lastCommit = r.mapCommit( parentId );
 
@@ -127,7 +138,6 @@ public class GenerateVersionFile extends Task {
                 return retval;
             }
         }
-
 
         return "";
     }
@@ -173,8 +183,14 @@ public class GenerateVersionFile extends Task {
         vf.setBaseDir( new File(".git") );
 
         vf.execute();
+    }
 
+    public void setPropertyPrefix( final String propertyPrefix ) {
+        _propertyPrefix = propertyPrefix;
+    }
 
+    public String getPropertyPrefix() {
+        return _propertyPrefix;
     }
 
 
