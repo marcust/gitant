@@ -83,13 +83,20 @@ public class GenerateVersionFile extends Task {
 
     private boolean isDirty( final Repository r ) throws MissingObjectException, IncorrectObjectTypeException, CorruptObjectException, IOException {
         final IndexDiff d = new IndexDiff( r );
+        d.diff();
         final Set<String> filteredModifications = Sets.filter( d.getModified(), new NotIsGitlink( r ) ); 
 
+        System.out.println("Added: " + d.getAdded());
+        System.out.println("Changed: " + d.getChanged());
+        System.out.println("Missing: " + d.getMissing());
+        System.out.println("Modified: " + filteredModifications);
+        System.out.println("Removed: " + d.getRemoved());
+
         final boolean clean = d.getAdded().isEmpty()
-                           && d.getChanged().isEmpty()
-                           && d.getMissing().isEmpty()
-                           && filteredModifications.isEmpty()
-                           && !d.getRemoved().isEmpty();
+        && d.getChanged().isEmpty()
+        && d.getMissing().isEmpty()
+        && filteredModifications.isEmpty()
+        && !d.getRemoved().isEmpty();
 
         return !clean;
     }
