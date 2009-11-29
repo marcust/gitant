@@ -26,7 +26,7 @@ import org.eclipse.jgit.lib.Repository;
 public class GenerateVersionFile extends Task {
 
     private File _baseDir;
-    
+
     public File getBaseDir() {
         return _baseDir;
     }
@@ -36,27 +36,40 @@ public class GenerateVersionFile extends Task {
         Repository r = null;
         try {
             r = new Repository( getBaseDir() );
-            
+
             final String branch = r.getBranch();
-            
+
             final boolean dirty = isDirty(r);
-            
+
 
             log( "Currently on branch " + branch + " which is " + ( dirty ? "dirty" : "clean"), Project.MSG_INFO );
 
-            
-            
+
+
         } catch ( final IOException e ) {
             throw new BuildException(e);
         } finally {
             r.close();
         }
-    
+
     }
 
     private boolean isDirty( final Repository r ) throws MissingObjectException, IncorrectObjectTypeException, CorruptObjectException, IOException {
         final IndexDiff d = new IndexDiff( r );
-        return d.diff();
+        final boolean retval = d.diff();
+
+        if ( retval ) {
+            System.out.println("Added: " + d.getAdded());
+            System.out.println("Changed: " + d.getChanged());
+            System.out.println("Missing: " + d.getMissing());
+            System.out.println("Modified: " + d.getModified());
+            System.out.println("Removed: " + d.getRemoved());
+
+        }
+
+
+        return retval;
+
     }
 
     public void setBaseDir( final File baseDir ) {
@@ -66,11 +79,11 @@ public class GenerateVersionFile extends Task {
     public static void main( final String... args ) {
         final GenerateVersionFile vf = new GenerateVersionFile();
         vf.setBaseDir( new File(".git") );
-        
+
         vf.execute();
-        
-        
+
+
     }
-    
-    
+
+
 }
