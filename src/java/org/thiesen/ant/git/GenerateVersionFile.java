@@ -13,6 +13,7 @@ package org.thiesen.ant.git;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Set;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
@@ -20,10 +21,36 @@ import org.apache.tools.ant.Task;
 import org.eclipse.jgit.errors.CorruptObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
+import org.eclipse.jgit.lib.Commit;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.FileMode;
 import org.eclipse.jgit.lib.IndexDiff;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.Tree;
+import org.eclipse.jgit.lib.TreeEntry;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.Sets;
 
 public class GenerateVersionFile extends Task {
+
+    private final class NotIsGitlink implements Predicate<String> {
+        private final Tree _tree;
+
+        private NotIsGitlink( final Repository r ) throws IOException {
+            final Commit head = r.mapCommit(Constants.HEAD);
+            _tree = head.getTree();
+        }
+
+        public boolean apply( final String filename ) {
+            try {
+                final TreeEntry entry = _tree.findBlobMember( filename );
+                return entry.getMode() != FileMode.GITLINK;
+            } catch (final IOException e) {
+                return false;
+            }
+        }
+    }
 
     private File _baseDir;
 
@@ -56,20 +83,15 @@ public class GenerateVersionFile extends Task {
 
     private boolean isDirty( final Repository r ) throws MissingObjectException, IncorrectObjectTypeException, CorruptObjectException, IOException {
         final IndexDiff d = new IndexDiff( r );
-        final boolean retval = d.diff();
+        final Set<String> filteredModifications = Sets.filter( d.getModified(), new NotIsGitlink( r ) ); 
 
-        if ( retval ) {
-            System.out.println("Added: " + d.getAdded());
-            System.out.println("Changed: " + d.getChanged());
-            System.out.println("Missing: " + d.getMissing());
-            System.out.println("Modified: " + d.getModified());
-            System.out.println("Removed: " + d.getRemoved());
+        final boolean clean = d.getAdded().isEmpty()
+                           && d.getChanged().isEmpty()
+                           && d.getMissing().isEmpty()
+                           && filteredModifications.isEmpty()
+                           && !d.getRemoved().isEmpty();
 
-        }
-
-
-        return retval;
-
+        return !clean;
     }
 
     public void setBaseDir( final File baseDir ) {
