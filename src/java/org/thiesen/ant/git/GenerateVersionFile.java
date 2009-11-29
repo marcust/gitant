@@ -29,8 +29,9 @@ public class GenerateVersionFile extends Task {
 
     @Override
     public void execute() throws BuildException {
+        Repository r = null;
         try {
-            final Repository r = new Repository( getBaseDir() );
+            r = new Repository( getBaseDir() );
             
             final String branch = r.getBranch();
             
@@ -41,6 +42,8 @@ public class GenerateVersionFile extends Task {
             
         } catch ( final IOException e ) {
             throw new BuildException(e);
+        } finally {
+            r.close();
         }
     
     }
