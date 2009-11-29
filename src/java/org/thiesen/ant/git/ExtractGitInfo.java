@@ -61,7 +61,8 @@ public class ExtractGitInfo extends Task {
 
     private File _baseDir;
     private String _propertyPrefix;
-    
+    private boolean _displayInfo;
+
     public File getBaseDir() {
         return _baseDir;
     }
@@ -80,15 +81,20 @@ public class ExtractGitInfo extends Task {
 
             final String lastTag = getLastTag(r);
 
-            log( "Currently on branch " + branch + " which is " + ( dirty ? "dirty" : "clean"), Project.MSG_INFO );
-            log( "Last Commit: " + lastCommit , Project.MSG_INFO );
-            log( "Last Tag: " + ( StringUtils.isEmpty( lastTag ) ? "unknown" : lastTag ), Project.MSG_INFO );
+            if ( isDisplayInfo() ) {
+                log( "Currently on branch " + branch + " which is " + ( dirty ? "dirty" : "clean"), Project.MSG_INFO );
+                log( "Last Commit: " + lastCommit , Project.MSG_INFO );
+                log( "Last Tag: " + ( StringUtils.isEmpty( lastTag ) ? "unknown" : lastTag ), Project.MSG_INFO );
+            }
 
-            getProject().setProperty( pefixName("git.branch" ), branch );
-            getProject().setProperty( pefixName("git.dirty" ), String.valueOf( dirty ) );
-            getProject().setProperty( pefixName("git.commit" ), lastCommit );
-            getProject().setProperty( pefixName("git.tag" ), lastTag );
-            
+            final Project currentProject = getProject();
+            if ( currentProject != null ) {
+                currentProject.setProperty( pefixName("git.branch" ), branch );
+                currentProject.setProperty( pefixName("git.dirty" ), String.valueOf( dirty ) );
+                currentProject.setProperty( pefixName("git.commit" ), lastCommit );
+                currentProject.setProperty( pefixName("git.tag" ), lastTag );
+            }
+
         } catch ( final IOException e ) {
             throw new BuildException(e);
         } finally {
@@ -100,13 +106,13 @@ public class ExtractGitInfo extends Task {
 
     private String pefixName( final String string ) {
         final String propertyPrefix = getPropertyPrefix();
-        
+
         if (StringUtils.isNotBlank( propertyPrefix ) ) {
             return propertyPrefix  + "." + string;
         }
-        
+
         return string;
-        
+
     }
 
     private String getLastTag( final Repository r ) throws IOException {
@@ -181,6 +187,7 @@ public class ExtractGitInfo extends Task {
     public static void main( final String... args ) {
         final ExtractGitInfo vf = new ExtractGitInfo();
         vf.setBaseDir( new File(".git") );
+        vf.setDisplayInfo( true );
 
         vf.execute();
     }
@@ -191,6 +198,14 @@ public class ExtractGitInfo extends Task {
 
     public String getPropertyPrefix() {
         return _propertyPrefix;
+    }
+
+    public void setDisplayInfo( final boolean displayInfo ) {
+        _displayInfo = displayInfo;
+    }
+
+    public boolean isDisplayInfo() {
+        return _displayInfo;
     }
 
 
