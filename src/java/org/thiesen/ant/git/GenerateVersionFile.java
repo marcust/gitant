@@ -76,7 +76,9 @@ public class GenerateVersionFile extends Task {
         } catch ( final IOException e ) {
             throw new BuildException(e);
         } finally {
-            r.close();
+            if ( r != null ) {
+                r.close();
+            }
         }
 
     }
@@ -85,12 +87,6 @@ public class GenerateVersionFile extends Task {
         final IndexDiff d = new IndexDiff( r );
         d.diff();
         final Set<String> filteredModifications = Sets.filter( d.getModified(), new NotIsGitlink( r ) ); 
-
-        System.out.println("Added: " + d.getAdded());
-        System.out.println("Changed: " + d.getChanged());
-        System.out.println("Missing: " + d.getMissing());
-        System.out.println("Modified: " + filteredModifications);
-        System.out.println("Removed: " + d.getRemoved());
 
         final boolean clean = d.getAdded().isEmpty()
         && d.getChanged().isEmpty()
