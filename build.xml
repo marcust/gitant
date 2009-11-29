@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
 
-<project name="ecj4ant" default="compile" basedir=".">
+<project name="gitant" default="compile" basedir=".">
      <!-- properties -->
      <property name="src"                  value="src/" />
      <property name="build"                value="build" />
