@@ -96,7 +96,7 @@ public class GenerateVersionFile extends Task {
         && d.getChanged().isEmpty()
         && d.getMissing().isEmpty()
         && filteredModifications.isEmpty()
-        && !d.getRemoved().isEmpty();
+        && d.getRemoved().isEmpty();
 
         return !clean;
     }
