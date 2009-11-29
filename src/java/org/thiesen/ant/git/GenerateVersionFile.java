@@ -13,8 +13,11 @@ package org.thiesen.ant.git;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
@@ -25,12 +28,16 @@ import org.eclipse.jgit.lib.Commit;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.FileMode;
 import org.eclipse.jgit.lib.IndexDiff;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.Tree;
 import org.eclipse.jgit.lib.TreeEntry;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableMap.Builder;
 
 public class GenerateVersionFile extends Task {
 
@@ -68,8 +75,14 @@ public class GenerateVersionFile extends Task {
 
             final boolean dirty = isDirty(r);
 
+            final String lastCommit = getLastCommit(r);
+
+            final String lastTag = getLastTag(r);
+
 
             log( "Currently on branch " + branch + " which is " + ( dirty ? "dirty" : "clean"), Project.MSG_INFO );
+            log( "Last Commit " + lastCommit , Project.MSG_INFO );
+            log( "Last Tag " + lastTag , Project.MSG_INFO );
 
 
 
@@ -81,6 +94,60 @@ public class GenerateVersionFile extends Task {
             }
         }
 
+    }
+
+    private String getLastTag( final Repository r ) throws IOException {
+        final ImmutableMap<ObjectId, String> tagsByObjectId = getTagsByObjectId( r );
+
+        final Commit head = r.mapCommit(Constants.HEAD);
+
+        return findFirstReachable(r, tagsByObjectId, head);
+    }
+
+    private String findFirstReachable( final Repository r, final ImmutableMap<ObjectId, String> tagsByObjectId, final Commit commit ) throws IOException {
+        final ObjectId id = commit.getCommitId();
+        if ( tagsByObjectId.containsKey( id )) {
+            return tagsByObjectId.get( id );
+        }
+
+        for ( final ObjectId parentId : commit.getParentIds() ) {
+            if ( tagsByObjectId.containsKey( parentId ) ) {
+                return tagsByObjectId.get( parentId );
+            }
+        }
+
+
+
+        for ( final ObjectId parentId : commit.getParentIds() ) {
+            final Commit lastCommit = r.mapCommit( parentId );
+
+            final String retval = findFirstReachable( r, tagsByObjectId, lastCommit );
+
+            if ( StringUtils.isNotBlank( retval ) ) {
+                return retval;
+            }
+        }
+
+
+        return "";
+    }
+
+    private ImmutableMap<ObjectId, String> getTagsByObjectId( final Repository r ) {
+        final Map<String, Ref> tags = r.getTags();
+
+        final Builder<ObjectId, String> tagsByObjectId = ImmutableMap.<ObjectId, String>builder();
+
+        for ( final Entry<String,Ref> entry : tags.entrySet() ) {
+            tagsByObjectId.put(entry.getValue().getObjectId(),entry.getKey());
+        }
+
+        return tagsByObjectId.build();
+    }
+
+    private String getLastCommit( final Repository r ) throws IOException {
+        final Commit head = r.mapCommit(Constants.HEAD);
+
+        return head.getCommitId().name();
     }
 
     private boolean isDirty( final Repository r ) throws MissingObjectException, IncorrectObjectTypeException, CorruptObjectException, IOException {
