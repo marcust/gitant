@@ -17,6 +17,10 @@ import java.io.IOException;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
+import org.eclipse.jgit.errors.CorruptObjectException;
+import org.eclipse.jgit.errors.IncorrectObjectTypeException;
+import org.eclipse.jgit.errors.MissingObjectException;
+import org.eclipse.jgit.lib.IndexDiff;
 import org.eclipse.jgit.lib.Repository;
 
 public class GenerateVersionFile extends Task {
@@ -35,8 +39,10 @@ public class GenerateVersionFile extends Task {
             
             final String branch = r.getBranch();
             
+            final boolean dirty = isDirty(r);
+            
 
-            log( "Currently on branch: " + branch, Project.MSG_INFO );
+            log( "Currently on branch " + branch + " which is " + ( dirty ? "dirty" : "clean"), Project.MSG_INFO );
 
             
             
@@ -46,6 +52,11 @@ public class GenerateVersionFile extends Task {
             r.close();
         }
     
+    }
+
+    private boolean isDirty( final Repository r ) throws MissingObjectException, IncorrectObjectTypeException, CorruptObjectException, IOException {
+        final IndexDiff d = new IndexDiff( r );
+        return d.diff();
     }
 
     public void setBaseDir( final File baseDir ) {
