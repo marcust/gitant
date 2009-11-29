@@ -39,7 +39,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.ImmutableMap.Builder;
 
-public class GenerateVersionFile extends Task {
+public class ExtractGitInfo extends Task {
 
     private final class NotIsGitlink implements Predicate<String> {
         private final Tree _tree;
@@ -179,7 +179,7 @@ public class GenerateVersionFile extends Task {
     }
 
     public static void main( final String... args ) {
-        final GenerateVersionFile vf = new GenerateVersionFile();
+        final ExtractGitInfo vf = new ExtractGitInfo();
         vf.setBaseDir( new File(".git") );
 
         vf.execute();
