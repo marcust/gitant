@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+
+<project name="ecj4ant" default="compile" basedir=".">
+     <!-- properties -->
+     <property name="src"                  value="src/" />
+     <property name="build"                value="build" />
+     <property name="classes"              value="${build}/classes" />
+     <property name="pkgbase"              value="org-thiesen-gitant" />
+
+     <property name="lib.home" value="lib/" />
+
+     <fileset dir="${lib.home}" id="libs">
+       <include name="ant-1.7.1.jar" />
+       <include name="commons-lang-2.4.jar" />
+       <include name="google-collect-1.0-rc4.jar" />
+       <include name="org-thiesen-gitant-v0.0.1.jar" />
+     </fileset>	
+
+     <fileset dir="./jgit/org.eclipse.jgit/target/" id="jgit">
+       <include name="*.jar" />
+     </fileset>
+
+     
+    <path id="compile.classpath">
+       <fileset refid="libs" />
+       <fileset refid="jgit" />
+    </path>
+
+
+    <target name="git-info" description="Use the Task">
+        <taskdef name="git-info" classname="org.thiesen.ant.git.ExtractGitInfo">
+            <classpath>
+                <fileset refid="libs"/>
+                <fileset refid="jgit" />
+            </classpath>
+	</taskdef>
+        <git-info 
+           baseDir=".git"
+           propertyPrefix=""
+           displayInfo="true"
+           />
+    </target>
+
+
+    <target name=".classpath" description="Generate Eclipse .classpath file">
+        <mkdir dir=".eclipse-out"/>
+        <pathconvert property="eclipse.entries" refid="compile.classpath"
+            pathsep="&quot;/&gt;&#10;    &lt;classpathentry kind=&quot;lib&quot; path=&quot;" />
+        <echo file=".classpath"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+    <classpathentry excluding="*.svn|.svn/" kind="src" path="${src}"/>
+    <classpathentry kind="lib" path="${eclipse.entries}"/>
+    <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+    <classpathentry kind="output" path=".eclipse-bin"/>
+</classpath>]]>
+        </echo>
+    </target>
+    
+     <target name="prepare" depends="git-info">
+        <mkdir dir="${build}" />
+        <mkdir dir="${classes}" />
+     </target>
+
+     <target name="compile" depends="prepare" description="compile it">
+        <javac srcdir="${src}" source="1.6" target="1.6" 
+               destdir="${classes}" debug="on">
+            <compilerarg value="-Xlint:all"/>
+            <classpath>
+                <fileset refid="libs"/>
+                <fileset refid="jgit" />
+            </classpath>
+         </javac>
+     </target>
+     
+     <target name="jar" depends="compile" description="make jar">
+	 <jar jarfile="${build}/${pkgbase}-${git.tag}.jar">
+           <fileset dir="${classes}">
+              <include name="**/*.class"/>
+           </fileset>
+        </jar>
+     </target>
+
+     <target name="clean" description="remove">
+        <delete dir="${pkgbase}"/>
+        <delete dir="${classes}"/>
+        <delete dir="${build}"/>
+     </target>
+
+
+
+
+</project>
+
+
+
+
