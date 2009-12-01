@@ -35,9 +35,10 @@ import org.eclipse.jgit.lib.Tree;
 import org.eclipse.jgit.lib.TreeEntry;
 
 import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Sets;
-import com.google.common.collect.ImmutableMap.Builder;
 
 public class ExtractGitInfo extends Task {
 
@@ -116,14 +117,20 @@ public class ExtractGitInfo extends Task {
     }
 
     private String getLastTag( final Repository r ) throws IOException {
-        final ImmutableMap<ObjectId, String> tagsByObjectId = getTagsByObjectId( r );
+        final ImmutableMultimap<ObjectId, String> tagsByObjectId = getTagsByObjectId( r );
 
         final Commit head = r.mapCommit(Constants.HEAD);
 
-        return findFirstReachable(r, tagsByObjectId, head);
+        final ImmutableCollection<String> tags = findFirstReachable(r, tagsByObjectId, head);
+        
+        if ( !tags.isEmpty() ) {
+            return tags.iterator().next();
+        }
+        
+        return "";
     }
 
-    private String findFirstReachable( final Repository r, final ImmutableMap<ObjectId, String> tagsByObjectId, final Commit commit ) throws IOException {
+    private ImmutableCollection<String> findFirstReachable( final Repository r, final ImmutableMultimap<ObjectId, String> tagsByObjectId, final Commit commit ) throws IOException {
         final ObjectId id = commit.getCommitId();
         if ( tagsByObjectId.containsKey( id )) {
             return tagsByObjectId.get( id );
@@ -138,20 +145,20 @@ public class ExtractGitInfo extends Task {
         for ( final ObjectId parentId : commit.getParentIds() ) {
             final Commit lastCommit = r.mapCommit( parentId );
 
-            final String retval = findFirstReachable( r, tagsByObjectId, lastCommit );
+            final ImmutableCollection<String> retval  = findFirstReachable( r, tagsByObjectId, lastCommit );
 
-            if ( StringUtils.isNotBlank( retval ) ) {
+            if ( !retval.isEmpty() ) {
                 return retval;
             }
         }
 
-        return "";
+        return ImmutableList.of();
     }
 
-    private ImmutableMap<ObjectId, String> getTagsByObjectId( final Repository r ) {
+    private ImmutableMultimap<ObjectId, String> getTagsByObjectId( final Repository r ) {
         final Map<String, Ref> tags = r.getTags();
 
-        final Builder<ObjectId, String> tagsByObjectId = ImmutableMap.<ObjectId, String>builder();
+        final ImmutableMultimap.Builder<ObjectId, String> tagsByObjectId = ImmutableMultimap.<ObjectId, String>builder();
 
         for ( final Entry<String,Ref> entry : tags.entrySet() ) {
             tagsByObjectId.put(entry.getValue().getObjectId(),entry.getKey());
