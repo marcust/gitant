@@ -31,6 +31,7 @@ import org.eclipse.jgit.lib.IndexDiff;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.Tag;
 import org.eclipse.jgit.lib.Tree;
 import org.eclipse.jgit.lib.TreeEntry;
 
@@ -155,13 +156,15 @@ public class ExtractGitInfo extends Task {
         return ImmutableList.of();
     }
 
-    private ImmutableMultimap<ObjectId, String> getTagsByObjectId( final Repository r ) {
+    private ImmutableMultimap<ObjectId, String> getTagsByObjectId( final Repository r ) throws IOException {
         final Map<String, Ref> tags = r.getTags();
 
         final ImmutableMultimap.Builder<ObjectId, String> tagsByObjectId = ImmutableMultimap.<ObjectId, String>builder();
 
         for ( final Entry<String,Ref> entry : tags.entrySet() ) {
-            tagsByObjectId.put(entry.getValue().getObjectId(),entry.getKey());
+            final Tag tag = r.mapTag( entry.getValue().getName(), entry.getValue().getObjectId() );
+
+            tagsByObjectId.put(tag.getObjId(),entry.getKey());
         }
 
         return tagsByObjectId.build();
