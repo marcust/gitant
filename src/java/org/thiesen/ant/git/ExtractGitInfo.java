@@ -95,9 +95,11 @@ public class ExtractGitInfo extends Task {
             final Project currentProject = getProject();
             if ( currentProject != null ) {
                 currentProject.setProperty( pefixName("git.branch" ), branch );
-                currentProject.setProperty( pefixName("git.dirty" ), String.valueOf( workingCopyDirty ) );
+                currentProject.setProperty( pefixName("git.workingcopy.dirty" ), String.valueOf( workingCopyDirty ) );
                 currentProject.setProperty( pefixName("git.commit" ), lastCommit );
                 currentProject.setProperty( pefixName("git.tag" ), lastTag != null ? lastTag.getTag() : "" );
+                currentProject.setProperty( pefixName("git.tag.dirty" ), String.valueOf( tagDirty ) );
+                currentProject.setProperty( pefixName("git.dirty" ), String.valueOf( workingCopyDirty || tagDirty ) );
             }
 
         } catch ( final IOException e ) {
