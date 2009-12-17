@@ -1,0 +1,72 @@
+GITANT
+======
+
+Exports information on your Git repository into Ant properties.
+
+Basic Usage:
+============
+See build.xml for an up to date example.
+
+        <git-info 
+           baseDir=".git" 
+           propertyPrefix=""
+           displayInfo="true"
+           />
+
+Ant Task Options:
+=================
+baseDir: Where the Git repository is located. Relative to your project
+base dir.
+
+propertyPrefix: GitAnt exports Properties into your Ant Buildfile. If
+you want to run this on multiple Checkouts, you can specify a prefix
+for the properties which will be used (this means for a prefix like
+"main." the property "git.tag" becomes "main.git.tag".
+
+displayInfo: Output information about the state during build:
+
+ [git-info] Currently on branch master which is clean
+ [git-info] Last Commit: d3169e69c054827b987055d7565736c3ff50e97d
+ [git-info] Last Tag: v0.0.5 which is dirty
+
+Dirty Tag means that there were changes to the repository since the
+tag. Branch dirty means that you have local uncommitted changes.
+
+Exported Properties:
+===================
+GitAnt exports the following Properties, which can be prefixes through
+the propertyPrefix option with a custom prefix:
+
+git.branch: The name of the branch you are currently on.
+
+git.workingcopy.dirty: Is the workingcopy dirty or clean (i.e. are
+there uncommitted changes). Boolean, "true" or "false".
+
+git.commit: The SHA of the last commit on this repo.
+
+git.tag: The name of the tag that is closest to HEAD seen through a
+breadth first search.
+
+git.tag.dirty: Is the tag dirty, i.e. have there been other commits
+since the tag.
+
+git.dirty: Deprecated, will be removed in later versions
+
+Extended Usage:
+===============
+What do I do with it? Create a Version file for your application
+during build:
+
+    <target name="Version.java" depends="prepare">
+        <tstamp>
+            <format property="COMPTIME" pattern="dd.MM.yyyy HH:mm"/>
+        </tstamp>
+        <delete file="${Version.java.target}"/>
+        <filter token="BRANCH" value="${git.branch}"/>
+        <filter token="TAG" value="${git.tag}"/>
+        <filter token="COMMIT" value="${git.commit}"/>
+        <filter token="TAG_DIRTY" value="${git.tag.dirty}"/>
+        <filter token="TAG_WORKINGCOPY_DIRTY" value="${git.workingcopy.dirty}"/>
+        <filter token="COMPILE_TIME" value="${COMPTIME}"/>
+        <copy file="${etc}/Version.java.tmpl" tofile="${Version.java.target}" filtering="yes"/>
+    </target>
