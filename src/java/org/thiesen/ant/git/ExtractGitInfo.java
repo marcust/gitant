@@ -79,22 +79,23 @@ public class ExtractGitInfo extends Task {
 
             final String lastCommit = getLastCommit(r);
 
+            final boolean workingCopyDirty = isDirty(null, r);
+
             final Tag lastTag = getLastTag(r);
 
-            final boolean dirty = isDirty(lastTag, r);
-
+            final boolean tagDirty = isDirty(lastTag, r);
 
             
             if ( isDisplayInfo() ) {
-                log( "Currently on branch " + branch + " which is " + ( dirty ? "dirty" : "clean"), Project.MSG_INFO );
+                log( "Currently on branch " + branch + " which is " + ( workingCopyDirty ? "dirty" : "clean"), Project.MSG_INFO );
                 log( "Last Commit: " + lastCommit , Project.MSG_INFO );
-                log( "Last Tag: " + ( lastTag == null  ? "unknown" : lastTag.getTag() ), Project.MSG_INFO );
+                log( "Last Tag: " + ( lastTag == null  ? "unknown" : lastTag.getTag() )  + " which is " + ( tagDirty ? "dirty" : "clean"), Project.MSG_INFO );
             }
 
             final Project currentProject = getProject();
             if ( currentProject != null ) {
                 currentProject.setProperty( pefixName("git.branch" ), branch );
-                currentProject.setProperty( pefixName("git.dirty" ), String.valueOf( dirty ) );
+                currentProject.setProperty( pefixName("git.dirty" ), String.valueOf( workingCopyDirty ) );
                 currentProject.setProperty( pefixName("git.commit" ), lastCommit );
                 currentProject.setProperty( pefixName("git.tag" ), lastTag != null ? lastTag.getTag() : "" );
             }
@@ -179,7 +180,7 @@ public class ExtractGitInfo extends Task {
     }
 
     private boolean isDirty( final Tag lastTag, final Repository r ) throws MissingObjectException, IncorrectObjectTypeException, CorruptObjectException, IOException {
-        final IndexDiff d = new IndexDiff( r );
+        final IndexDiff d = lastTag == null ? new IndexDiff( r ) : new IndexDiff( r.mapTree( lastTag.getObjId() ), r.getIndex() );
         d.diff();
         final Set<String> filteredModifications = Sets.filter( d.getModified(), new NotIsGitlink( r ) ); 
 
