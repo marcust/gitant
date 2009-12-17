@@ -43,7 +43,7 @@ import com.google.common.collect.Sets;
 
 public class ExtractGitInfo extends Task {
 
-    private final class NotIsGitlink implements Predicate<String> {
+    private final static class NotIsGitlink implements Predicate<String> {
         private final Tree _tree;
 
         private NotIsGitlink( final Repository r ) throws IOException {
@@ -60,7 +60,7 @@ public class ExtractGitInfo extends Task {
             }
         }
     }
-
+    
     private File _baseDir;
     private String _propertyPrefix;
     private boolean _displayInfo;
@@ -77,16 +77,18 @@ public class ExtractGitInfo extends Task {
 
             final String branch = r.getBranch();
 
-            final boolean dirty = isDirty(r);
-
             final String lastCommit = getLastCommit(r);
 
-            final String lastTag = getLastTag(r);
+            final Tag lastTag = getLastTag(r);
 
+            final boolean dirty = isDirty(lastTag, r);
+
+
+            
             if ( isDisplayInfo() ) {
                 log( "Currently on branch " + branch + " which is " + ( dirty ? "dirty" : "clean"), Project.MSG_INFO );
                 log( "Last Commit: " + lastCommit , Project.MSG_INFO );
-                log( "Last Tag: " + ( StringUtils.isEmpty( lastTag ) ? "unknown" : lastTag ), Project.MSG_INFO );
+                log( "Last Tag: " + ( lastTag == null  ? "unknown" : lastTag.getTag() ), Project.MSG_INFO );
             }
 
             final Project currentProject = getProject();
@@ -94,7 +96,7 @@ public class ExtractGitInfo extends Task {
                 currentProject.setProperty( pefixName("git.branch" ), branch );
                 currentProject.setProperty( pefixName("git.dirty" ), String.valueOf( dirty ) );
                 currentProject.setProperty( pefixName("git.commit" ), lastCommit );
-                currentProject.setProperty( pefixName("git.tag" ), lastTag );
+                currentProject.setProperty( pefixName("git.tag" ), lastTag != null ? lastTag.getTag() : "" );
             }
 
         } catch ( final IOException e ) {
@@ -117,21 +119,21 @@ public class ExtractGitInfo extends Task {
 
     }
 
-    private String getLastTag( final Repository r ) throws IOException {
-        final ImmutableMultimap<ObjectId, String> tagsByObjectId = getTagsByObjectId( r );
+    private Tag getLastTag( final Repository r ) throws IOException {
+        final ImmutableMultimap<ObjectId, Tag> tagsByObjectId = getTagsByObjectId( r );
 
         final Commit head = r.mapCommit(Constants.HEAD);
 
-        final ImmutableCollection<String> tags = findFirstReachable(r, tagsByObjectId, head);
+        final ImmutableCollection<Tag> tags = findFirstReachable(r, tagsByObjectId, head);
         
         if ( !tags.isEmpty() ) {
             return tags.iterator().next();
         }
         
-        return "";
+        return null;
     }
 
-    private ImmutableCollection<String> findFirstReachable( final Repository r, final ImmutableMultimap<ObjectId, String> tagsByObjectId, final Commit commit ) throws IOException {
+    private ImmutableCollection<Tag> findFirstReachable( final Repository r, final ImmutableMultimap<ObjectId, Tag> tagsByObjectId, final Commit commit ) throws IOException {
         final ObjectId id = commit.getCommitId();
         if ( tagsByObjectId.containsKey( id )) {
             return tagsByObjectId.get( id );
@@ -146,7 +148,7 @@ public class ExtractGitInfo extends Task {
         for ( final ObjectId parentId : commit.getParentIds() ) {
             final Commit lastCommit = r.mapCommit( parentId );
 
-            final ImmutableCollection<String> retval  = findFirstReachable( r, tagsByObjectId, lastCommit );
+            final ImmutableCollection<Tag> retval  = findFirstReachable( r, tagsByObjectId, lastCommit );
 
             if ( !retval.isEmpty() ) {
                 return retval;
@@ -156,15 +158,15 @@ public class ExtractGitInfo extends Task {
         return ImmutableList.of();
     }
 
-    private ImmutableMultimap<ObjectId, String> getTagsByObjectId( final Repository r ) throws IOException {
+    private ImmutableMultimap<ObjectId, Tag> getTagsByObjectId( final Repository r ) throws IOException {
         final Map<String, Ref> tags = r.getTags();
 
-        final ImmutableMultimap.Builder<ObjectId, String> tagsByObjectId = ImmutableMultimap.<ObjectId, String>builder();
+        final ImmutableMultimap.Builder<ObjectId, Tag> tagsByObjectId = ImmutableMultimap.builder();
 
         for ( final Entry<String,Ref> entry : tags.entrySet() ) {
             final Tag tag = r.mapTag( entry.getValue().getName(), entry.getValue().getObjectId() );
-
-            tagsByObjectId.put(tag.getObjId(),entry.getKey());
+            
+            tagsByObjectId.put(tag.getObjId(),tag);
         }
 
         return tagsByObjectId.build();
@@ -176,7 +178,7 @@ public class ExtractGitInfo extends Task {
         return head.getCommitId().name();
     }
 
-    private boolean isDirty( final Repository r ) throws MissingObjectException, IncorrectObjectTypeException, CorruptObjectException, IOException {
+    private boolean isDirty( final Tag lastTag, final Repository r ) throws MissingObjectException, IncorrectObjectTypeException, CorruptObjectException, IOException {
         final IndexDiff d = new IndexDiff( r );
         d.diff();
         final Set<String> filteredModifications = Sets.filter( d.getModified(), new NotIsGitlink( r ) ); 
