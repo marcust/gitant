@@ -13,7 +13,7 @@
        <include name="ant-1.7.1.jar" />
        <include name="commons-lang-2.4.jar" />
        <include name="google-collect-1.0-rc4.jar" />
-       <include name="org-thiesen-gitant-v0.0.1.jar" />
+       <include name="org-thiesen-gitant-v0.0.5.jar" />
      </fileset>	
 
      <fileset dir="./jgit/org.eclipse.jgit/target/" id="jgit">
