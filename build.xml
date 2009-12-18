@@ -38,7 +38,39 @@
            baseDir=".git"
            propertyPrefix=""
            displayInfo="true"
-           />
+           /> 
+        <condition property="version" value="${git.tag}-SNAPSHOT">
+           <and>
+             <istrue value="${git.workingcopy.dirty}" />
+             <istrue value="${git.tag.dirty}" />
+             <not>
+               <equals arg1="${git.tag}" arg2="" />
+             </not>
+           </and>
+         </condition>
+         <condition property="version" value="${git.tag}-${git.commit}-SNAPSHOT">
+           <and>
+             <isfalse value="${git.workingcopy.dirty}" />
+             <istrue value="${git.tag.dirty}" />
+             <not>
+               <equals arg1="${git.tag}" arg2="" />
+             </not>
+           </and>
+         </condition>
+         <condition property="version" value="${git.tag}">
+           <and>
+             <isfalse value="${git.workingcopy.dirty}" />
+             <isfalse value="${git.tag.dirty}" />
+             <not>
+               <equals arg1="${git.tag}" arg2="" />
+             </not>
+           </and>
+         </condition>
+         <condition property="version" value="${git.commit}-SNAPSHOT">
+           <not>
+             <isset property="version" />
+           </not>
+         </condition>  
     </target>
 
 
@@ -73,10 +105,18 @@
      </target>
      
      <target name="jar" depends="compile" description="make jar">
-	 <jar jarfile="${build}/${pkgbase}-${git.tag}.jar">
+	 <jar jarfile="${build}/${pkgbase}-${version}.jar">
            <fileset dir="${classes}">
               <include name="**/*.class"/>
            </fileset>
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Git-Branch" value="${git.branch}" />
+                <attribute name="Git-Workingcopy-Dirty" value="${git.workingcopy.dirty}" />
+                <attribute name="Git-Commit" value="${git.commit}" />
+                <attribute name="Git-Tag" value="${git.tag}" />
+                <attribute name="Git-Tag-Dirty" value="${git.tag.dirty}" />
+            </manifest>
         </jar>
      </target>
 
