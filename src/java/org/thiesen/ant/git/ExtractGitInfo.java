@@ -84,7 +84,6 @@ public class ExtractGitInfo extends Task {
             final Tag lastTag = getLastTag(r);
 
             final boolean tagDirty = isDirty(lastTag, r);
-
             
             if ( isDisplayInfo() ) {
                 log( "Currently on branch " + branch + " which is " + ( workingCopyDirty ? "dirty" : "clean"), Project.MSG_INFO );
@@ -178,7 +177,11 @@ public class ExtractGitInfo extends Task {
     private String getLastCommit( final Repository r ) throws IOException {
         final Commit head = r.mapCommit(Constants.HEAD);
 
-        return head.getCommitId().name();
+        if ( head != null && head.getCommitId() != null ) { 
+            return head.getCommitId().name();
+        } 
+        
+        return "";
     }
 
     private boolean isDirty( final Tag lastTag, final Repository r ) throws MissingObjectException, IncorrectObjectTypeException, CorruptObjectException, IOException {
