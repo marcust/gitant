@@ -57,6 +57,13 @@
              </not>
            </and>
          </condition>
+         <condition property="version" value="${git.commit}">
+           <and>
+             <isfalse value="${git.workingcopy.dirty}" />
+             <isfalse value="${git.tag.dirty}" />
+             <equals arg1="${git.tag}" arg2="" />
+           </and>
+         </condition>
          <condition property="version" value="${git.tag}">
            <and>
              <isfalse value="${git.workingcopy.dirty}" />
@@ -66,7 +73,7 @@
              </not>
            </and>
          </condition>
-         <condition property="version" value="${git.commit}-SNAPSHOT">
+         <condition property="version" value="SNAPSHOT">
            <not>
              <isset property="version" />
            </not>
