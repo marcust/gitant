@@ -25,8 +25,7 @@ public class GitInfo {
     private final boolean _lastTagDirty;
     private final Tag _lastTag;
     private final String _displayString;
-    private String _tagAuthorName;
-    private String _tagAuthorEmail;
+    private final String _tagAuthorName;
     
     private GitInfo( final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
             final boolean lastTagDirty, final Tag lastTag ) {
@@ -36,61 +35,62 @@ public class GitInfo {
         _workingCopyDirty = workingCopyDirty;
         _lastTagDirty = lastTagDirty;
         _lastTag = lastTag;
-        _displayString = makeDisplayString(currentBranch, lastCommit, workingCopyDirty, lastTag, lastTagDirty);
-        
         if ( lastTag != null ) {
-            final PersonIdent author = lastTag.getAuthor();
+            final PersonIdent author = lastTag.getTagger();
             
             if ( author != null ) {
                 _tagAuthorName = StringUtils.defaultString( author.getName() );
-                _tagAuthorEmail = StringUtils.defaultString( author.getEmailAddress() );
+            } else {
+                _tagAuthorName = "";
             }
         } else {
             _tagAuthorName = "";
-            _tagAuthorEmail = "";
         }
+
+        _displayString = makeDisplayString(currentBranch, lastCommit, workingCopyDirty, lastTag, lastTagDirty, _tagAuthorName);
+    
     }
 
-    public static GitInfo valueOf( final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
+    static GitInfo valueOf( final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
             final Tag lastTag, final boolean lastTagDirty ) {
         return new GitInfo( currentBranch, lastCommit, workingCopyDirty, lastTagDirty, lastTag );
     }
     
-    public String makeDisplayString(final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
-            final Tag lastTag, final boolean lastTagDirty) {
+    private static String makeDisplayString(final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
+            final Tag lastTag, final boolean lastTagDirty, final String lastTagAuthorName ) {
         final StringBuilder retval = new StringBuilder();
         retval.append( "Currently on branch " ).append( currentBranch ).append( " which is " ).append( workingCopyDirty ? "dirty" : "clean").append('\n');
         retval.append( "Last Commit: " ).append( lastCommit ).append('\n');
-        retval.append( "Last Tag: " ).append( lastTag == null  ? "unknown" : lastTag.getTag() ).append( " by " ).append( StringUtils.isBlank( _tagAuthorName ) ? "unknown" : _tagAuthorName ).append( " which is " ).append( lastTagDirty ? "dirty" : "clean");
+        retval.append( "Last Tag: " ).append( lastTag == null  ? "unknown" : lastTag.getTag() ).append( " by " ).append( StringUtils.isBlank( lastTagAuthorName ) ? "unknown" : lastTagAuthorName ).append( " which is " ).append( lastTagDirty ? "dirty" : "clean");
 
         return retval.toString();
     }
     
-    public String getDisplayString() {
+    String getDisplayString() {
         return _displayString;
     }
 
-    public String getCurrentBranch() {
+    String getCurrentBranch() {
         return _currentBranch;
     }
 
-    public String getLastCommit() {
+    String getLastCommit() {
         return _lastCommit;
     }
 
-    public boolean isWorkingCopyDirty() {
+    boolean isWorkingCopyDirty() {
         return _workingCopyDirty;
     }
 
-    public boolean isLastTagDirty() {
+    boolean isLastTagDirty() {
         return _lastTagDirty;
     }
 
-    public String getLastTagName() {
+    String getLastTagName() {
         return _lastTag == null ? "" : _lastTag.getTag();
     }
     
-    public String getVersionPostfix() {
+    String getVersionPostfix() {
         if ( _workingCopyDirty ) {
             return SNAPSHOT_POSTFIX;
         }
