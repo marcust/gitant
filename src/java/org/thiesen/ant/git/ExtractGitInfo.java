@@ -60,6 +60,8 @@ public class ExtractGitInfo extends Task {
             }
         }
     }
+
+    private static final String STATIC_PREFIX = "git.";
     
     private File _baseDir;
     private String _propertyPrefix;
@@ -93,12 +95,12 @@ public class ExtractGitInfo extends Task {
 
             final Project currentProject = getProject();
             if ( currentProject != null ) {
-                currentProject.setProperty( pefixName("git.branch" ), branch );
-                currentProject.setProperty( pefixName("git.workingcopy.dirty" ), String.valueOf( workingCopyDirty ) );
-                currentProject.setProperty( pefixName("git.commit" ), lastCommit );
-                currentProject.setProperty( pefixName("git.tag" ), lastTag != null ? lastTag.getTag() : "" );
-                currentProject.setProperty( pefixName("git.tag.dirty" ), String.valueOf( tagDirty ) );
-                currentProject.setProperty( pefixName("git.dirty" ), String.valueOf( workingCopyDirty || tagDirty ) );
+                currentProject.setProperty( pefixName("branch" ), branch );
+                currentProject.setProperty( pefixName("workingcopy.dirty" ), String.valueOf( workingCopyDirty ) );
+                currentProject.setProperty( pefixName("commit" ), lastCommit );
+                currentProject.setProperty( pefixName("tag" ), lastTag != null ? lastTag.getTag() : "" );
+                currentProject.setProperty( pefixName("tag.dirty" ), String.valueOf( tagDirty ) );
+                currentProject.setProperty( pefixName("dirty" ), String.valueOf( workingCopyDirty || tagDirty ) );
             }
 
         } catch ( final IOException e ) {
@@ -114,10 +116,10 @@ public class ExtractGitInfo extends Task {
         final String propertyPrefix = getPropertyPrefix();
 
         if (StringUtils.isNotBlank( propertyPrefix ) ) {
-            return propertyPrefix  + "." + string;
+            return STATIC_PREFIX + propertyPrefix  + "." + string;
         }
 
-        return string;
+        return STATIC_PREFIX + string;
 
     }
 
