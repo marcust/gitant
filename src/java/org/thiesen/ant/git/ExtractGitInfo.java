@@ -49,6 +49,7 @@ public class ExtractGitInfo extends Task {
                 currentProject.setProperty( pefixName("tag" ), info.getLastTagName() );
                 currentProject.setProperty( pefixName("tag.dirty" ), String.valueOf( info.isLastTagDirty() ) );
                 currentProject.setProperty( pefixName("dirty" ), String.valueOf( info.isWorkingCopyDirty() || info.isLastTagDirty() ) );
+                currentProject.setProperty( pefixName("version" ), info.getVersionPostfix() );
             }
 
         } catch ( final IOException e ) {
