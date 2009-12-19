@@ -13,7 +13,7 @@
        <include name="ant-1.7.1.jar" />
        <include name="commons-lang-2.4.jar" />
        <include name="google-collect-1.0-rc4.jar" />
-       <include name="org-thiesen-gitant-v0.0.5.jar" />
+       <include name="org-thiesen-gitant-SNAPSHOT.jar" />
      </fileset>	
 
      <fileset dir="./jgit/org.eclipse.jgit/target/" id="jgit">
@@ -39,45 +39,6 @@
            propertyPrefix=""
            displayInfo="true"
            /> 
-        <condition property="version" value="${git.tag}-SNAPSHOT">
-           <and>
-             <istrue value="${git.workingcopy.dirty}" />
-             <istrue value="${git.tag.dirty}" />
-             <not>
-               <equals arg1="${git.tag}" arg2="" />
-             </not>
-           </and>
-         </condition>
-         <condition property="version" value="${git.tag}-${git.commit}-SNAPSHOT">
-           <and>
-             <isfalse value="${git.workingcopy.dirty}" />
-             <istrue value="${git.tag.dirty}" />
-             <not>
-               <equals arg1="${git.tag}" arg2="" />
-             </not>
-           </and>
-         </condition>
-         <condition property="version" value="${git.commit}">
-           <and>
-             <isfalse value="${git.workingcopy.dirty}" />
-             <isfalse value="${git.tag.dirty}" />
-             <equals arg1="${git.tag}" arg2="" />
-           </and>
-         </condition>
-         <condition property="version" value="${git.tag}">
-           <and>
-             <isfalse value="${git.workingcopy.dirty}" />
-             <isfalse value="${git.tag.dirty}" />
-             <not>
-               <equals arg1="${git.tag}" arg2="" />
-             </not>
-           </and>
-         </condition>
-         <condition property="version" value="SNAPSHOT">
-           <not>
-             <isset property="version" />
-           </not>
-         </condition>  
     </target>
 
 
@@ -112,7 +73,7 @@
      </target>
      
      <target name="jar" depends="compile" description="make jar">
-	 <jar jarfile="${build}/${pkgbase}-${version}.jar">
+	 <jar jarfile="${build}/${pkgbase}-${git.version}.jar">
            <fileset dir="${classes}">
               <include name="**/*.class"/>
            </fileset>
@@ -122,6 +83,8 @@
                 <attribute name="Git-Workingcopy-Dirty" value="${git.workingcopy.dirty}" />
                 <attribute name="Git-Commit" value="${git.commit}" />
                 <attribute name="Git-Tag" value="${git.tag}" />
+                <attribute name="Git-Tag-Author-Name" value="${git.tag.author.name}" />
+                <attribute name="Git-Tag-Author-Email" value="${git.tag.author.email}" />
                 <attribute name="Git-Tag-Dirty" value="${git.tag.dirty}" />
             </manifest>
         </jar>

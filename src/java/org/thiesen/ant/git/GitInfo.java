@@ -18,14 +18,16 @@ import org.eclipse.jgit.lib.Tag;
 
 public class GitInfo {
 
-    private static final String SNAPSHOT_POSTFIX = "SNASPHOT";
+    private static final String SNAPSHOT_POSTFIX = "SNAPSHOT";
     private final String _currentBranch;
     private final String _lastCommit;
     private final boolean _workingCopyDirty;
     private final boolean _lastTagDirty;
     private final Tag _lastTag;
     private final String _displayString;
-    private final String _tagAuthorName;
+    private final String _lastTagAuthorName;
+    private final String _lastTagAuthorEmail;
+    
     
     private GitInfo( final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
             final boolean lastTagDirty, final Tag lastTag ) {
@@ -39,15 +41,18 @@ public class GitInfo {
             final PersonIdent author = lastTag.getTagger();
             
             if ( author != null ) {
-                _tagAuthorName = StringUtils.defaultString( author.getName() );
+                _lastTagAuthorName = StringUtils.defaultString( author.getName() );
+                _lastTagAuthorEmail = StringUtils.defaultString( author.getEmailAddress() );
             } else {
-                _tagAuthorName = "";
+                _lastTagAuthorName = "";
+                _lastTagAuthorEmail = "";
             }
         } else {
-            _tagAuthorName = "";
+            _lastTagAuthorName = "";
+            _lastTagAuthorEmail = "";
         }
 
-        _displayString = makeDisplayString(currentBranch, lastCommit, workingCopyDirty, lastTag, lastTagDirty, _tagAuthorName);
+        _displayString = makeDisplayString(currentBranch, lastCommit, workingCopyDirty, lastTag, lastTagDirty, getLastTagAuthorName());
     
     }
 
@@ -107,6 +112,14 @@ public class GitInfo {
         }
         
         return retval.toString();
+    }
+
+    public String getLastTagAuthorName() {
+        return _lastTagAuthorName;
+    }
+
+    public String getLastTagAuthorEmail() {
+        return _lastTagAuthorEmail;
     }
     
 }
