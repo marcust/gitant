@@ -22,6 +22,10 @@ package org.thiesen.ant.git;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.BuildException;
@@ -46,6 +50,8 @@ public class ExtractGitInfo extends Task {
         try {
             final GitInfo info = GitInfoExtractor.extractInfo( getBaseDir() );
             
+            log( "This is GitAnt " + loadVersion() + " - 2009-2010 by Marcus Thiesen (marcus@thiesen.org)" );
+            
             if ( isDisplayInfo() ) {
                 log( info.getDisplayString(), Project.MSG_INFO );
             }
@@ -68,6 +74,30 @@ public class ExtractGitInfo extends Task {
         }
     }
 
+    private String loadVersion() {
+        try {
+            final Enumeration<URL> resources = getClass().getClassLoader()
+            .getResources("META-INF/MANIFEST.MF");
+            while (resources.hasMoreElements()) {
+
+                final Manifest manifest = new Manifest(resources.nextElement().openStream());
+
+                final Attributes mainAttributes = manifest.getMainAttributes();
+                
+                if ("gitant".equalsIgnoreCase( mainAttributes.getValue( "Project-Name" ) ) ) {
+                    return mainAttributes.getValue( "Git-Version" );
+                }
+
+            }
+
+        } catch (final IOException E) {
+            // do nothing
+        }
+        return "unknown version";
+
+    }
+
+    
     private String pefixName( final String string ) {
         final String propertyPrefix = getPropertyPrefix();
 

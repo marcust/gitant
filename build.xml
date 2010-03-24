@@ -78,6 +78,7 @@
               <include name="**/*.class"/>
            </fileset>
             <manifest>
+                <attribute name="Project-Name" value="${ant.project.name}"/>
                 <attribute name="Built-By" value="${user.name}"/>
                 <attribute name="Git-Branch" value="${git.branch}" />
                 <attribute name="Git-Workingcopy-Dirty" value="${git.workingcopy.dirty}" />
@@ -86,6 +87,7 @@
                 <attribute name="Git-Tag-Author-Name" value="${git.tag.author.name}" />
                 <attribute name="Git-Tag-Author-Email" value="${git.tag.author.email}" />
                 <attribute name="Git-Tag-Dirty" value="${git.tag.dirty}" />
+                <attribute name="Git-Version" value="${git.version}" />
             </manifest>
         </jar>
      </target>

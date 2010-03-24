@@ -73,7 +73,7 @@ public class GitInfo {
     private static String makeDisplayString(final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
             final Tag lastTag, final boolean lastTagDirty, final String lastTagAuthorName ) {
         final StringBuilder retval = new StringBuilder();
-        retval.append( "Currently on branch " ).append( currentBranch ).append( " which has " ).append( workingCopyDirty ? "uncomitted changes" : " no changes").append('\n');
+        retval.append( "Currently on branch " ).append( currentBranch ).append( " which has " ).append( workingCopyDirty ? "uncomitted changes" : "no changes").append('\n');
         retval.append( "Last Commit: " ).append( lastCommit ).append('\n');
         retval.append( "Last Tag: " ).append( lastTag == null  ? "unknown" : lastTag.getTag() ).append( " by " ).append( StringUtils.isBlank( lastTagAuthorName ) ? "unknown" : lastTagAuthorName ).append( " which is " ).append( lastTagDirty ? "dirty" : "clean");
 
