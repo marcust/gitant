@@ -119,6 +119,9 @@ public class GitInfo {
             }
             retval.append(getLastCommit()).append('-').append( SNAPSHOT_POSTFIX );
         }
+        if ( retval.length() == 0 ) {
+            retval.append(getLastCommit());
+        }
         
         return retval.toString();
     }
