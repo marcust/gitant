@@ -3,3 +3,4 @@
 *~
 build
 .ant-targets-build.xml
+.eclipse-bin

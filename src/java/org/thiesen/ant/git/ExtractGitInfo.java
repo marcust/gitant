@@ -51,6 +51,7 @@ public class ExtractGitInfo extends Task {
             final GitInfo info = GitInfoExtractor.extractInfo( getBaseDir() );
             
             log( "This is GitAnt " + loadVersion() + " - 2009-2010 by Marcus Thiesen (marcus@thiesen.org)" );
+            log( "Using " + loadJGitVersion() );
             
             if ( isDisplayInfo() ) {
                 log( info.getDisplayString(), Project.MSG_INFO );
@@ -58,20 +59,24 @@ public class ExtractGitInfo extends Task {
 
             final Project currentProject = getProject();
             if ( currentProject != null ) {
-                currentProject.setProperty( pefixName("branch" ), info.getCurrentBranch() );
-                currentProject.setProperty( pefixName("workingcopy.dirty" ), String.valueOf( info.isWorkingCopyDirty() ) );
-                currentProject.setProperty( pefixName("commit" ), info.getLastCommit() );
-                currentProject.setProperty( pefixName("tag" ), info.getLastTagName() );
-                currentProject.setProperty( pefixName("tag.dirty" ), String.valueOf( info.isLastTagDirty() ) );
-                currentProject.setProperty( pefixName("tag.author.name" ), info.getLastTagAuthorName() );
-                currentProject.setProperty( pefixName("tag.author.email" ), info.getLastTagAuthorEmail() );
-                currentProject.setProperty( pefixName("dirty" ), String.valueOf( info.isWorkingCopyDirty() || info.isLastTagDirty() ) );
-                currentProject.setProperty( pefixName("version" ), info.getVersionPostfix() );
+                exportProperties( info, currentProject );
             }
 
         } catch ( final IOException e ) {
             throw new BuildException(e);
         }
+    }
+
+    private void exportProperties( final GitInfo info, final Project currentProject ) {
+        currentProject.setProperty( pefixName("branch" ), info.getCurrentBranch() );
+        currentProject.setProperty( pefixName("workingcopy.dirty" ), String.valueOf( info.isWorkingCopyDirty() ) );
+        currentProject.setProperty( pefixName("commit" ), info.getLastCommit() );
+        currentProject.setProperty( pefixName("tag" ), info.getLastTagName() );
+        currentProject.setProperty( pefixName("tag.dirty" ), String.valueOf( info.isLastTagDirty() ) );
+        currentProject.setProperty( pefixName("tag.author.name" ), info.getLastTagAuthorName() );
+        currentProject.setProperty( pefixName("tag.author.email" ), info.getLastTagAuthorEmail() );
+        currentProject.setProperty( pefixName("dirty" ), String.valueOf( info.isWorkingCopyDirty() || info.isLastTagDirty() ) );
+        currentProject.setProperty( pefixName("version" ), info.getVersionPostfix() );
     }
 
     private String loadVersion() {
@@ -95,6 +100,30 @@ public class ExtractGitInfo extends Task {
         }
         return "unknown version";
 
+    }
+
+    private String loadJGitVersion() {
+        try {
+            final Enumeration<URL> resources = getClass().getClassLoader()
+            .getResources("META-INF/MANIFEST.MF");
+            while (resources.hasMoreElements()) {
+
+                final Manifest manifest = new Manifest(resources.nextElement().openStream());
+
+                final Attributes mainAttributes = manifest.getMainAttributes();
+                
+                if ("org.eclipse.jgit".equalsIgnoreCase( mainAttributes.getValue( "Bundle-SymbolicName" ) ) ) {
+                    return mainAttributes.getValue( "Implementation-Title" ) + " " + mainAttributes.getValue( "Implementation-Version" );
+                }
+
+            }
+
+        } catch (final IOException E) {
+            // do nothing
+        }
+        return "unknown version";
+
+        
     }
 
     
