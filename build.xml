@@ -14,16 +14,11 @@
        <include name="commons-lang-2.4.jar" />
        <include name="google-collect-1.0-rc4.jar" />
        <include name="org-thiesen-gitant-SNAPSHOT.jar" />
+       <include name="org.eclipse.jgit-0.7.1.jar" />
      </fileset>	
 
-     <fileset dir="./jgit/org.eclipse.jgit/target/" id="jgit">
-       <include name="*.jar" />
-     </fileset>
-
-     
     <path id="compile.classpath">
        <fileset refid="libs" />
-       <fileset refid="jgit" />
     </path>
 
 
@@ -31,7 +26,6 @@
         <taskdef name="git-info" classname="org.thiesen.ant.git.ExtractGitInfo">
             <classpath>
                 <fileset refid="libs"/>
-                <fileset refid="jgit" />
             </classpath>
 	</taskdef>
         <git-info 
@@ -63,11 +57,12 @@
 
      <target name="compile" depends="prepare" description="compile it">
         <javac srcdir="${src}" source="1.6" target="1.6" 
-               destdir="${classes}" debug="on">
+               destdir="${classes}" debug="on"
+               includeantruntime="true"
+               >
             <compilerarg value="-Xlint:all"/>
             <classpath>
                 <fileset refid="libs"/>
-                <fileset refid="jgit" />
             </classpath>
          </javac>
      </target>
