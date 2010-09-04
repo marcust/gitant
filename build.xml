@@ -14,7 +14,7 @@
        <include name="commons-lang-2.4.jar" />
        <include name="google-collect-1.0-rc4.jar" />
        <include name="org-thiesen-gitant-SNAPSHOT.jar" />
-       <include name="org.eclipse.jgit-0.7.1.jar" />
+       <include name="org.eclipse.jgit-0.8.4.jar" />
      </fileset>	
 
     <path id="compile.classpath">
