@@ -20,6 +20,8 @@
  */
 package org.thiesen.ant.git;
 
+import java.util.Date;
+
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Tag;
@@ -30,6 +32,8 @@ public class GitInfo {
     private static final String SNAPSHOT_POSTFIX = "SNAPSHOT";
     private final String _currentBranch;
     private final String _lastCommit;
+    private final String _lastCommitShort;
+    private final Date _lastCommitDate;
     private final boolean _workingCopyDirty;
     private final boolean _lastTagDirty;
     private final Tag _lastTag;
@@ -39,10 +43,12 @@ public class GitInfo {
     
     
     private GitInfo( final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
-            final boolean lastTagDirty, final Tag lastTag ) {
+            final boolean lastTagDirty, final Tag lastTag, final String lastCommitShort, final Date lastCommitDate ) {
         super();
         _currentBranch = currentBranch;
         _lastCommit = lastCommit;
+        _lastCommitShort = lastCommitShort;
+        _lastCommitDate = lastCommitDate;
         _workingCopyDirty = workingCopyDirty;
         _lastTagDirty = lastTagDirty;
         _lastTag = lastTag;
@@ -66,8 +72,8 @@ public class GitInfo {
     }
 
     static GitInfo valueOf( final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
-            final Tag lastTag, final boolean lastTagDirty ) {
-        return new GitInfo( currentBranch, lastCommit, workingCopyDirty, lastTagDirty, lastTag );
+            final Tag lastTag, final boolean lastTagDirty, final String lastCommitShortHash, final Date lastCommitDate ) {
+        return new GitInfo( currentBranch, lastCommit, workingCopyDirty, lastTagDirty, lastTag, lastCommitShortHash, lastCommitDate );
     }
     
     private static String makeDisplayString(final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
@@ -92,6 +98,14 @@ public class GitInfo {
         return _lastCommit;
     }
 
+    String getLastCommitShort() {
+        return _lastCommitShort;
+    }
+
+    Date getLastCommitDate() {
+        return _lastCommitDate;
+    }
+
     boolean isWorkingCopyDirty() {
         return _workingCopyDirty;
     }
@@ -102,6 +116,10 @@ public class GitInfo {
 
     String getLastTagName() {
         return _lastTag == null ? "" : _lastTag.getTag();
+    }
+    
+    String getLastTagHash() {
+        return _lastTag == null ? "" : _lastTag.getObjId().name();
     }
     
     String getVersionPostfix() {

@@ -28,6 +28,7 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
@@ -68,15 +69,18 @@ public class ExtractGitInfo extends Task {
     }
 
     private void exportProperties( final GitInfo info, final Project currentProject ) {
-        currentProject.setProperty( pefixName("branch" ), info.getCurrentBranch() );
-        currentProject.setProperty( pefixName("workingcopy.dirty" ), String.valueOf( info.isWorkingCopyDirty() ) );
-        currentProject.setProperty( pefixName("commit" ), info.getLastCommit() );
-        currentProject.setProperty( pefixName("tag" ), info.getLastTagName() );
-        currentProject.setProperty( pefixName("tag.dirty" ), String.valueOf( info.isLastTagDirty() ) );
-        currentProject.setProperty( pefixName("tag.author.name" ), info.getLastTagAuthorName() );
-        currentProject.setProperty( pefixName("tag.author.email" ), info.getLastTagAuthorEmail() );
-        currentProject.setProperty( pefixName("dirty" ), String.valueOf( info.isWorkingCopyDirty() || info.isLastTagDirty() ) );
-        currentProject.setProperty( pefixName("version" ), info.getVersionPostfix() );
+        currentProject.setProperty( prefixName("branch" ), info.getCurrentBranch() );
+        currentProject.setProperty( prefixName("workingcopy.dirty" ), String.valueOf( info.isWorkingCopyDirty() ) );
+        currentProject.setProperty( prefixName("commit" ), info.getLastCommit() );
+        currentProject.setProperty( prefixName("commit.short" ), info.getLastCommitShort() );
+        currentProject.setProperty( prefixName("commit.date" ), DateFormatUtils.format( info.getLastCommitDate(), "EEE, dd MMM yyyy HH:mm:ss Z" ) );
+        currentProject.setProperty( prefixName("tag" ), info.getLastTagName() );
+        currentProject.setProperty( prefixName("tag.hash" ), info.getLastTagHash() );
+        currentProject.setProperty( prefixName("tag.dirty" ), String.valueOf( info.isLastTagDirty() ) );
+        currentProject.setProperty( prefixName("tag.author.name" ), info.getLastTagAuthorName() );
+        currentProject.setProperty( prefixName("tag.author.email" ), info.getLastTagAuthorEmail() );
+        currentProject.setProperty( prefixName("dirty" ), String.valueOf( info.isWorkingCopyDirty() || info.isLastTagDirty() ) );
+        currentProject.setProperty( prefixName("version" ), info.getVersionPostfix() );
     }
 
     private String loadVersion() {
@@ -127,7 +131,7 @@ public class ExtractGitInfo extends Task {
     }
 
     
-    private String pefixName( final String string ) {
+    private String prefixName( final String string ) {
         final String propertyPrefix = getPropertyPrefix();
 
         if (StringUtils.isNotBlank( propertyPrefix ) ) {

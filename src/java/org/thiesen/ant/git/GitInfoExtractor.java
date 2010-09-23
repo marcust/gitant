@@ -22,6 +22,7 @@ package org.thiesen.ant.git;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
@@ -74,7 +75,10 @@ public class GitInfoExtractor {
         try {
             final String currentBranch = r.getBranch();
 
-            final String lastCommit = getLastCommit(r);
+            final Commit head = getHead( r );
+            final String lastCommit = getCommitId( head );
+            final String lastCommitShort = getCommitIdShort( head, r );
+            final Date lastCommitDate = getCommitDate( head );
 
             final boolean workingCopyDirty = isDirty(null, r);
 
@@ -82,7 +86,7 @@ public class GitInfoExtractor {
 
             final boolean lastTagDirty = isDirty(lastTag, r);
 
-            return GitInfo.valueOf( currentBranch, lastCommit, workingCopyDirty, lastTag, lastTagDirty );
+            return GitInfo.valueOf( currentBranch, lastCommit, workingCopyDirty, lastTag, lastTagDirty, lastCommitShort, lastCommitDate );
 
         } finally {
             r.close();
@@ -143,16 +147,34 @@ public class GitInfoExtractor {
         return tagsByObjectId.build();
     }
 
-    private static String getLastCommit( final Repository r ) throws IOException {
-        final Commit head = r.mapCommit(Constants.HEAD);
-
-        if ( head != null && head.getCommitId() != null ) { 
-            return head.getCommitId().name();
+    private static Commit getHead( final Repository r ) throws IOException {
+        return r.mapCommit(Constants.HEAD);
+    }
+    
+    private static String getCommitId( final Commit commit ) throws IOException {
+        if ( commit != null && commit.getCommitId() != null ) { 
+            return commit.getCommitId().name();
         } 
 
         return "";
     }
+    
+    private static String getCommitIdShort( final Commit commit, final Repository r ) throws IOException {
+        if ( commit != null && commit.getCommitId() != null ) { 
+            return commit.getCommitId().abbreviate( r ).name();
+        } 
 
+        return "";
+    }
+    
+    private static Date getCommitDate( final Commit commit ) throws IOException {
+        if ( commit != null && commit.getCommitId() != null ) { 
+            return commit.getAuthor().getWhen();
+        } 
+
+        return null;
+    }
+    
     private static boolean isDirty( final Tag lastTag, final Repository r ) throws MissingObjectException, IncorrectObjectTypeException, CorruptObjectException, IOException {
         final IndexDiff d = lastTag == null ? new IndexDiff( r ) : new IndexDiff( r.mapTree( lastTag.getObjId() ), r.getIndex() );
         d.diff();
@@ -166,10 +188,4 @@ public class GitInfoExtractor {
 
         return !clean;
     }
-
-
-
-
-
-
 }
