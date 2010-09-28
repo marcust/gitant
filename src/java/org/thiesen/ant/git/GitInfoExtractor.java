@@ -61,7 +61,7 @@ public class GitInfoExtractor {
         public boolean apply( final String filename ) {
             try {
                 final TreeEntry entry = _tree.findBlobMember( filename );
-                return entry.getMode() != FileMode.GITLINK;
+                return entry.getMode() != FileMode.GITLINK && entry.getMode() != FileMode.SYMLINK;
             } catch (final IOException e) {
                 return false;
             }
