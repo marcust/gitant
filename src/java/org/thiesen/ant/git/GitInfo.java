@@ -40,8 +40,8 @@ public class GitInfo {
     private final String _displayString;
     private final String _lastTagAuthorName;
     private final String _lastTagAuthorEmail;
-    
-    
+
+
     private GitInfo( final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
             final boolean lastTagDirty, final Tag lastTag, final String lastCommitShort, final Date lastCommitDate ) {
         super();
@@ -54,7 +54,7 @@ public class GitInfo {
         _lastTag = lastTag;
         if ( lastTag != null ) {
             final PersonIdent author = lastTag.getTagger();
-            
+
             if ( author != null ) {
                 _lastTagAuthorName = StringUtils.defaultString( author.getName() );
                 _lastTagAuthorEmail = StringUtils.defaultString( author.getEmailAddress() );
@@ -68,14 +68,14 @@ public class GitInfo {
         }
 
         _displayString = makeDisplayString(currentBranch, lastCommit, workingCopyDirty, lastTag, lastTagDirty, getLastTagAuthorName());
-    
+
     }
 
     static GitInfo valueOf( final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
             final Tag lastTag, final boolean lastTagDirty, final String lastCommitShortHash, final Date lastCommitDate ) {
         return new GitInfo( currentBranch, lastCommit, workingCopyDirty, lastTagDirty, lastTag, lastCommitShortHash, lastCommitDate );
     }
-    
+
     private static String makeDisplayString(final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
             final Tag lastTag, final boolean lastTagDirty, final String lastTagAuthorName ) {
         final StringBuilder retval = new StringBuilder();
@@ -85,7 +85,7 @@ public class GitInfo {
 
         return retval.toString();
     }
-    
+
     String getDisplayString() {
         return _displayString;
     }
@@ -117,11 +117,11 @@ public class GitInfo {
     String getLastTagName() {
         return _lastTag == null ? "" : _lastTag.getTag();
     }
-    
+
     String getLastTagHash() {
         return _lastTag == null ? "" : _lastTag.getObjId().name();
     }
-    
+
     String getVersionPostfix() {
         if ( _workingCopyDirty ) {
             return SNAPSHOT_POSTFIX;
@@ -140,7 +140,7 @@ public class GitInfo {
         if ( retval.length() == 0 ) {
             retval.append(getLastCommit());
         }
-        
+
         return retval.toString();
     }
 
@@ -151,5 +151,5 @@ public class GitInfo {
     public String getLastTagAuthorEmail() {
         return _lastTagAuthorEmail;
     }
-    
+
 }

@@ -36,7 +36,7 @@ import org.apache.tools.ant.Task;
 public class ExtractGitInfo extends Task {
 
     private static final String STATIC_PREFIX = "git.";
-    
+
     private File _baseDir;
     private String _propertyPrefix;
     private boolean _displayInfo;
@@ -47,13 +47,21 @@ public class ExtractGitInfo extends Task {
 
     @Override
     public void execute() throws BuildException {
-         
+        if ( getBaseDir() == null ) {
+            throw new BuildException("baseDir property must be set." );
+        }
+
+        if ( !getBaseDir().exists() ) {
+            throw new BuildException("Base dir " + getBaseDir().getAbsolutePath() + " does not exist!" );
+        }
+
+
         try {
             final GitInfo info = GitInfoExtractor.extractInfo( getBaseDir() );
-            
+
             log( "This is GitAnt " + loadVersion() + " - 2009-2010 by Marcus Thiesen (marcus@thiesen.org)" );
             log( "Using " + loadJGitVersion() );
-            
+
             if ( isDisplayInfo() ) {
                 log( info.getDisplayString(), Project.MSG_INFO );
             }
@@ -92,7 +100,7 @@ public class ExtractGitInfo extends Task {
                 final Manifest manifest = new Manifest(resources.nextElement().openStream());
 
                 final Attributes mainAttributes = manifest.getMainAttributes();
-                
+
                 if ("gitant".equalsIgnoreCase( mainAttributes.getValue( "Project-Name" ) ) ) {
                     return mainAttributes.getValue( "Git-Version" );
                 }
@@ -115,7 +123,7 @@ public class ExtractGitInfo extends Task {
                 final Manifest manifest = new Manifest(resources.nextElement().openStream());
 
                 final Attributes mainAttributes = manifest.getMainAttributes();
-                
+
                 if ("org.eclipse.jgit".equalsIgnoreCase( mainAttributes.getValue( "Bundle-SymbolicName" ) ) ) {
                     return mainAttributes.getValue( "Implementation-Title" ) + " " + mainAttributes.getValue( "Implementation-Version" );
                 }
@@ -127,10 +135,10 @@ public class ExtractGitInfo extends Task {
         }
         return "unknown version";
 
-        
+
     }
 
-    
+
     private String prefixName( final String string ) {
         final String propertyPrefix = getPropertyPrefix();
 

@@ -150,7 +150,7 @@ public class GitInfoExtractor {
     private static Commit getHead( final Repository r ) throws IOException {
         return r.mapCommit(Constants.HEAD);
     }
-    
+
     private static String getCommitId( final Commit commit ) throws IOException {
         if ( commit != null && commit.getCommitId() != null ) { 
             return commit.getCommitId().name();
@@ -158,7 +158,7 @@ public class GitInfoExtractor {
 
         return "";
     }
-    
+
     private static String getCommitIdShort( final Commit commit, final Repository r ) throws IOException {
         if ( commit != null && commit.getCommitId() != null ) { 
             return commit.getCommitId().abbreviate( r ).name();
@@ -166,7 +166,7 @@ public class GitInfoExtractor {
 
         return "";
     }
-    
+
     private static Date getCommitDate( final Commit commit ) throws IOException {
         if ( commit != null && commit.getCommitId() != null ) { 
             return commit.getAuthor().getWhen();
@@ -174,7 +174,7 @@ public class GitInfoExtractor {
 
         return null;
     }
-    
+
     private static boolean isDirty( final Tag lastTag, final Repository r ) throws MissingObjectException, IncorrectObjectTypeException, CorruptObjectException, IOException {
         final IndexDiff d = lastTag == null ? new IndexDiff( r ) : new IndexDiff( r.mapTree( lastTag.getObjId() ), r.getIndex() );
         d.diff();
