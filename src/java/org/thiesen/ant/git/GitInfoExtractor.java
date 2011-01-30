@@ -24,22 +24,29 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
+import org.apache.tools.ant.BuildException;
 import org.eclipse.jgit.errors.CorruptObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
-import org.eclipse.jgit.lib.Commit;
+import org.eclipse.jgit.lib.AnyObjectId;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.FileMode;
 import org.eclipse.jgit.lib.IndexDiff;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.lib.Tag;
-import org.eclipse.jgit.lib.Tree;
-import org.eclipse.jgit.lib.TreeEntry;
+import org.eclipse.jgit.lib.RepositoryBuilder;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevObject;
+import org.eclipse.jgit.revwalk.RevTag;
+import org.eclipse.jgit.revwalk.RevTree;
+import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.treewalk.FileTreeIterator;
+import org.eclipse.jgit.treewalk.TreeWalk;
+import org.eclipse.jgit.treewalk.WorkingTreeIterator;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableCollection;
@@ -51,42 +58,57 @@ import com.google.common.collect.Sets;
 public class GitInfoExtractor {
 
     private final static class NotIsGitlink implements Predicate<String> {
-        private final Tree _tree;
+        private final RevTree _tree;
+        private final Repository _r;
 
         private NotIsGitlink( final Repository r ) throws IOException {
-            final Commit head = r.mapCommit(Constants.HEAD);
+            _r = r;
+            final RevCommit head = getHead( r );
+            
+            
             _tree = head.getTree();
         }
 
         public boolean apply( final String filename ) {
             try {
-                final TreeEntry entry = _tree.findBlobMember( filename );
-                return entry.getMode() != FileMode.GITLINK && entry.getMode() != FileMode.SYMLINK;
-            } catch (final IOException e) {
-                return false;
+                final TreeWalk pathWalk = TreeWalk.forPath( _r, filename, _tree.getId() );
+                    
+                final FileMode fileMode = pathWalk.getFileMode( 0 );
+                
+                return fileMode != FileMode.GITLINK && fileMode != FileMode.SYMLINK;
+            } catch ( final IOException e) {
+                throw new RuntimeException( e );
             }
         }
     }
 
 
     public static GitInfo extractInfo( final File dir ) throws IOException {
-        final Repository r= new Repository( dir );
-
+        if ( !dir.exists() ) {
+            throw new BuildException("No such directory: " + dir );
+        }
+        
+        final RepositoryBuilder builder = new RepositoryBuilder();
+        final Repository r = builder.setGitDir( dir )
+            .readEnvironment() // scan environment GIT_* variables
+            .findGitDir() // scan up the file system tree
+            .build();
+        
         try {
             final String currentBranch = r.getBranch();
 
-            final Commit head = getHead( r );
-            final String lastCommit = getCommitId( head );
-            final String lastCommitShort = getCommitIdShort( head, r );
-            final Date lastCommitDate = getCommitDate( head );
+            final RevCommit head = getHead( r );
+            final String lastRevCommit = getRevCommitId( head );
+            final String lastRevCommitShort = getRevCommitIdShort( head, r );
+            final Date lastRevCommitDate = getRevCommitDate( head );
 
             final boolean workingCopyDirty = isDirty(null, r);
 
-            final Tag lastTag = getLastTag(r);
+            final CustomTag lastRevTag = getLastRevTag(r);
 
-            final boolean lastTagDirty = isDirty(lastTag, r);
+            final boolean lastRevTagDirty = isDirty(lastRevTag, r);
 
-            return GitInfo.valueOf( currentBranch, lastCommit, workingCopyDirty, lastTag, lastTagDirty, lastCommitShort, lastCommitDate );
+            return GitInfo.valueOf( currentBranch, lastRevCommit, workingCopyDirty, lastRevTag, lastRevTagDirty, lastRevCommitShort, lastRevCommitDate );
 
         } finally {
             r.close();
@@ -94,12 +116,12 @@ public class GitInfoExtractor {
     }
 
 
-    private static Tag getLastTag( final Repository r ) throws IOException {
-        final ImmutableMultimap<ObjectId, Tag> tagsByObjectId = getTagsByObjectId( r );
+    private static CustomTag getLastRevTag( final Repository r ) throws IOException {
+        final ImmutableMultimap<ObjectId, CustomTag> tagsByObjectId = getTagsByTargetCommitObjectId( r );
 
-        final Commit head = r.mapCommit(Constants.HEAD);
+        final RevCommit head = getHead( r );
 
-        final ImmutableCollection<Tag> tags = findFirstReachable(r, tagsByObjectId, head);
+        final ImmutableCollection<CustomTag> tags = findFirstReachable(r, tagsByObjectId, head);
 
         if ( !tags.isEmpty() ) {
             return tags.iterator().next();
@@ -108,22 +130,22 @@ public class GitInfoExtractor {
         return null;
     }
 
-    private static ImmutableCollection<Tag> findFirstReachable( final Repository r, final ImmutableMultimap<ObjectId, Tag> tagsByObjectId, final Commit commit ) throws IOException {
-        final ObjectId id = commit.getCommitId();
+    private static ImmutableCollection<CustomTag> findFirstReachable( final Repository r, final ImmutableMultimap<ObjectId, CustomTag> tagsByObjectId, final RevCommit commit ) throws IOException {
+        final ObjectId id = commit.getId();
         if ( tagsByObjectId.containsKey( id )) {
             return tagsByObjectId.get( id );
         }
 
-        for ( final ObjectId parentId : commit.getParentIds() ) {
+        for ( final ObjectId parentId : commit.getParents() ) {
             if ( tagsByObjectId.containsKey( parentId ) ) {
                 return tagsByObjectId.get( parentId );
             }
         }
 
-        for ( final ObjectId parentId : commit.getParentIds() ) {
-            final Commit lastCommit = r.mapCommit( parentId );
+        for ( final ObjectId parentId : commit.getParents() ) {
+            final RevCommit lastRevCommit = getCommit( r,  parentId );
 
-            final ImmutableCollection<Tag> retval  = findFirstReachable( r, tagsByObjectId, lastCommit );
+            final ImmutableCollection<CustomTag> retval  = findFirstReachable( r, tagsByObjectId, lastRevCommit );
 
             if ( !retval.isEmpty() ) {
                 return retval;
@@ -133,50 +155,84 @@ public class GitInfoExtractor {
         return ImmutableList.of();
     }
 
-    private static ImmutableMultimap<ObjectId, Tag> getTagsByObjectId( final Repository r ) throws IOException {
+    private static ImmutableMultimap<ObjectId, CustomTag> getTagsByTargetCommitObjectId( final Repository r ) throws MissingObjectException, IncorrectObjectTypeException, IOException {
         final Map<String, Ref> tags = r.getTags();
 
-        final ImmutableMultimap.Builder<ObjectId, Tag> tagsByObjectId = ImmutableMultimap.builder();
+        final ImmutableMultimap.Builder<ObjectId, CustomTag> tagsByObjectId = ImmutableMultimap.builder();
 
         for ( final Entry<String,Ref> entry : tags.entrySet() ) {
-            final Tag tag = r.mapTag( entry.getValue().getName(), entry.getValue().getObjectId() );
+            final String tagName = entry.getKey();
+            final Ref ref = entry.getValue();
+            final ObjectId id = ref.getPeeledObjectId() != null ? ref.getPeeledObjectId() : ref.getObjectId();
+            
+            final RevObject obj = lookupAnyTag( r, id );
 
-            tagsByObjectId.put(tag.getObjId(),tag);
+            if ( obj.getType() == Constants.OBJ_TAG ) {
+                final RevTag tag = (RevTag) obj;
+                tagsByObjectId.put( tag.getObject().getId(), new CustomTag( tagName, id, obj ) );
+            } else {
+                tagsByObjectId.put( ref.getObjectId(), new CustomTag( tagName, id, obj ) );    
+            }
+             
+            
         }
 
         return tagsByObjectId.build();
     }
 
-    private static Commit getHead( final Repository r ) throws IOException {
-        return r.mapCommit(Constants.HEAD);
+    private static RevCommit getHead( final Repository r ) throws IOException {
+        final ObjectId headId = r.resolve( Constants.HEAD );
+        return getCommit( r, headId );
     }
 
-    private static String getCommitId( final Commit commit ) throws IOException {
-        if ( commit != null && commit.getCommitId() != null ) { 
-            return commit.getCommitId().name();
-        } 
-
-        return "";
+    private static RevCommit getCommit( final Repository r, final AnyObjectId id ) throws MissingObjectException, IncorrectObjectTypeException, IOException {
+        final RevWalk walk = new RevWalk( r );
+        try {
+            return walk.parseCommit( id );
+        } finally {
+            walk.dispose();
+        }
+    }
+    
+    private static RevObject lookupAnyTag( final Repository r, final AnyObjectId id ) throws MissingObjectException, IncorrectObjectTypeException, IOException {
+        final RevWalk walk = new RevWalk( r );
+        try {
+            final RevObject obj = walk.parseAny( id );
+            
+            if ( obj != null && obj.getType() == Constants.OBJ_TAG ) {
+                return walk.parseTag( id );    
+            } 
+            
+            return walk.parseCommit( id );
+                
+            
+            
+        } finally {
+            walk.dispose();
+        }
     }
 
-    private static String getCommitIdShort( final Commit commit, final Repository r ) throws IOException {
-        if ( commit != null && commit.getCommitId() != null ) { 
-            return commit.getCommitId().abbreviate( r ).name();
-        } 
-
-        return "";
+    
+    private static String getRevCommitId( final RevCommit commit ) {
+        return commit.getName();
     }
 
-    private static Date getCommitDate( final Commit commit ) throws IOException {
-        if ( commit != null && commit.getCommitId() != null ) { 
-            return commit.getAuthor().getWhen();
-        } 
-
-        return null;
+    private static String getRevCommitIdShort( final RevCommit commit, final Repository r ) throws IOException {
+        final RevWalk walk = new RevWalk( r );
+        try {
+            return walk.getObjectReader().abbreviate( commit.getId() ).name();
+        } finally {
+            walk.dispose();
+        }
     }
 
-    private static boolean isDirty( final Tag lastTag, final Repository r ) throws MissingObjectException, IncorrectObjectTypeException, CorruptObjectException, IOException {
-        final IndexDiff d = lastTag == null ? new IndexDiff( r ) : new IndexDiff( r.mapTree( lastTag.getObjId() ), r.getIndex() );
+    private static Date getRevCommitDate( final RevCommit commit ) {
+        return new Date( commit.getCommitTime() );
+    }
+
+    private static boolean isDirty( final CustomTag lastRevTag, final Repository r ) throws MissingObjectException, IncorrectObjectTypeException, CorruptObjectException, IOException {
+        final WorkingTreeIterator iterator = new FileTreeIterator( r ); 
+        final IndexDiff d = lastRevTag == null ? new IndexDiff( r, Constants.HEAD, iterator ) : new IndexDiff( r, lastRevTag.getObjectId(), iterator );
         d.diff();
         final Set<String> filteredModifications = Sets.filter( d.getModified(), new NotIsGitlink( r ) ); 
 
@@ -185,7 +241,9 @@ public class GitInfoExtractor {
         && d.getMissing().isEmpty()
         && filteredModifications.isEmpty()
         && d.getRemoved().isEmpty();
-
+        
         return !clean;
     }
+    
+
 }

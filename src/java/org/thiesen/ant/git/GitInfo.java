@@ -23,8 +23,10 @@ package org.thiesen.ant.git;
 import java.util.Date;
 
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.PersonIdent;
-import org.eclipse.jgit.lib.Tag;
+import org.eclipse.jgit.revwalk.RevObject;
+import org.eclipse.jgit.revwalk.RevTag;
 
 
 public class GitInfo {
@@ -36,14 +38,14 @@ public class GitInfo {
     private final Date _lastCommitDate;
     private final boolean _workingCopyDirty;
     private final boolean _lastTagDirty;
-    private final Tag _lastTag;
+    private final CustomTag _lastTag;
     private final String _displayString;
     private final String _lastTagAuthorName;
     private final String _lastTagAuthorEmail;
 
 
     private GitInfo( final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
-            final boolean lastTagDirty, final Tag lastTag, final String lastCommitShort, final Date lastCommitDate ) {
+            final boolean lastTagDirty, final CustomTag lastTag, final String lastCommitShort, final Date lastCommitDate ) {
         super();
         _currentBranch = currentBranch;
         _lastCommit = lastCommit;
@@ -53,15 +55,28 @@ public class GitInfo {
         _lastTagDirty = lastTagDirty;
         _lastTag = lastTag;
         if ( lastTag != null ) {
-            final PersonIdent author = lastTag.getTagger();
-
-            if ( author != null ) {
-                _lastTagAuthorName = StringUtils.defaultString( author.getName() );
-                _lastTagAuthorEmail = StringUtils.defaultString( author.getEmailAddress() );
+            final RevObject object = lastTag.getObject();
+            
+            if ( object.getType() == Constants.OBJ_TAG ) {
+                final RevTag tag = (RevTag) object;
+                final PersonIdent author = tag.getTaggerIdent();
+                
+                
+                if ( author != null ) {
+                    _lastTagAuthorName = StringUtils.defaultString( author.getName() );
+                    _lastTagAuthorEmail = StringUtils.defaultString( author.getEmailAddress() );
+                } else {
+                    _lastTagAuthorName = "";
+                    _lastTagAuthorEmail = "";
+                }
+                
             } else {
                 _lastTagAuthorName = "";
                 _lastTagAuthorEmail = "";
+               
             }
+            
+            
         } else {
             _lastTagAuthorName = "";
             _lastTagAuthorEmail = "";
@@ -72,16 +87,16 @@ public class GitInfo {
     }
 
     static GitInfo valueOf( final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
-            final Tag lastTag, final boolean lastTagDirty, final String lastCommitShortHash, final Date lastCommitDate ) {
+            final CustomTag lastTag, final boolean lastTagDirty, final String lastCommitShortHash, final Date lastCommitDate ) {
         return new GitInfo( currentBranch, lastCommit, workingCopyDirty, lastTagDirty, lastTag, lastCommitShortHash, lastCommitDate );
     }
 
     private static String makeDisplayString(final String currentBranch, final String lastCommit, final boolean workingCopyDirty,
-            final Tag lastTag, final boolean lastTagDirty, final String lastTagAuthorName ) {
+            final CustomTag lastTag, final boolean lastTagDirty, final String lastTagAuthorName ) {
         final StringBuilder retval = new StringBuilder();
         retval.append( "Currently on branch " ).append( currentBranch ).append( " which has " ).append( workingCopyDirty ? "uncomitted changes" : "no changes").append('\n');
         retval.append( "Last Commit: " ).append( lastCommit ).append('\n');
-        retval.append( "Last Tag: " ).append( lastTag == null  ? "unknown" : lastTag.getTag() ).append( " by " ).append( StringUtils.isBlank( lastTagAuthorName ) ? "unknown" : lastTagAuthorName ).append( " which is " ).append( lastTagDirty ? "dirty" : "clean");
+        retval.append( "Last Tag: " ).append( lastTag == null  ? "unknown" : lastTag.getName() ).append( " by " ).append( StringUtils.isBlank( lastTagAuthorName ) ? "unknown" : lastTagAuthorName ).append( " which is " ).append( lastTagDirty ? "dirty" : "clean");
 
         return retval.toString();
     }
@@ -115,11 +130,11 @@ public class GitInfo {
     }
 
     String getLastTagName() {
-        return _lastTag == null ? "" : _lastTag.getTag();
+        return _lastTag == null ? "" : _lastTag.getName();
     }
 
     String getLastTagHash() {
-        return _lastTag == null ? "" : _lastTag.getObjId().name();
+        return _lastTag == null ? "" : _lastTag.getObject().name();
     }
 
     String getVersionPostfix() {

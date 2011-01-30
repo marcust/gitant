@@ -1,4 +1,0 @@
-[submodule "jgit"]
-           path=jgit
-           url=git://egit.eclipse.org/jgit.git
-

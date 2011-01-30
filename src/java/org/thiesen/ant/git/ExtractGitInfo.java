@@ -23,6 +23,7 @@ package org.thiesen.ant.git;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -59,7 +60,7 @@ public class ExtractGitInfo extends Task {
         try {
             final GitInfo info = GitInfoExtractor.extractInfo( getBaseDir() );
 
-            log( "This is GitAnt " + loadVersion() + " - 2009-2010 by Marcus Thiesen (marcus@thiesen.org)" );
+            log( "This is GitAnt " + loadVersion() + " - 2009-" + Calendar.getInstance().get( Calendar.YEAR ) + " by Marcus Thiesen (marcus@thiesen.org) and contributors" );
             log( "Using " + loadJGitVersion() );
 
             if ( isDisplayInfo() ) {
@@ -156,7 +157,7 @@ public class ExtractGitInfo extends Task {
 
     public static void main( final String... args ) {
         final ExtractGitInfo vf = new ExtractGitInfo();
-        vf.setBaseDir( new File(".git") );
+        vf.setBaseDir( new File("/home/marcus/workspace/gitant/.git") );
         vf.setDisplayInfo( true );
 
         vf.execute();
