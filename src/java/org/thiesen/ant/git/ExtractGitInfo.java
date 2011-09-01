@@ -30,9 +30,11 @@ import java.util.jar.Manifest;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
+import org.apache.commons.lang.time.StopWatch;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
+import org.eclipse.jgit.errors.StopWalkException;
 
 public class ExtractGitInfo extends Task {
 
@@ -58,11 +60,16 @@ public class ExtractGitInfo extends Task {
 
 
         try {
+            final StopWatch watch = new StopWatch();
+            watch.start();
             final GitInfo info = GitInfoExtractor.extractInfo( getBaseDir() );
-
+            watch.stop();
+            
             log( "This is GitAnt " + loadVersion() + " - 2009-" + Calendar.getInstance().get( Calendar.YEAR ) + " by Marcus Thiesen (marcus@thiesen.org) and contributors" );
             log( "Using " + loadJGitVersion() );
+            log( "Data collection took " + watch );
 
+            
             if ( isDisplayInfo() ) {
                 log( info.getDisplayString(), Project.MSG_INFO );
             }
