@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import org.apache.tools.ant.BuildException;
 import org.eclipse.jgit.errors.CorruptObjectException;
@@ -52,7 +51,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Iterables;
 
 
 public class GitInfoExtractor {
@@ -69,6 +68,7 @@ public class GitInfoExtractor {
             _tree = head.getTree();
         }
 
+        @Override
         public boolean apply( final String filename ) {
             try {
                 final TreeWalk pathWalk = TreeWalk.forPath( _r, filename, _tree.getId() );
@@ -234,16 +234,13 @@ public class GitInfoExtractor {
         final WorkingTreeIterator iterator = new FileTreeIterator( r ); 
         final IndexDiff d = lastRevTag == null ? new IndexDiff( r, Constants.HEAD, iterator ) : new IndexDiff( r, lastRevTag.getObjectId(), iterator );
         d.diff();
-        final Set<String> filteredModifications = Sets.filter( d.getModified(), new NotIsGitlink( r ) ); 
-
-        final boolean clean = d.getAdded().isEmpty()
-        && d.getChanged().isEmpty()
-        && d.getMissing().isEmpty()
-        && filteredModifications.isEmpty()
-        && d.getRemoved().isEmpty();
         
-        return !clean;
+        @SuppressWarnings( "unchecked" )
+        final Iterable<String> allModifications = 
+                Iterables.filter( Iterables.concat( d.getAdded(), d.getModified(), d.getChanged(), d.getMissing(), d.getRemoved() ),
+                        new NotIsGitlink( r ) );
+        
+        return !Iterables.isEmpty( allModifications );
     }
     
-
 }

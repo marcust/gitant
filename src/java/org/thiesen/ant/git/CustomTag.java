@@ -39,6 +39,11 @@ public class CustomTag {
     RevObject getObject() {
         return _object;
     }
+    
+    @Override
+    public String toString() {
+        return _name + ":" + _object.getName();
+    }
 
     
     
