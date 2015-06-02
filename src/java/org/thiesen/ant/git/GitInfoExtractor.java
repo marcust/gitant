@@ -72,7 +72,8 @@ public class GitInfoExtractor {
         public boolean apply( final String filename ) {
             try {
                 final TreeWalk pathWalk = TreeWalk.forPath( _r, filename, _tree.getId() );
-                    
+                if (pathWalk==null) return true;
+                
                 final FileMode fileMode = pathWalk.getFileMode( 0 );
                 
                 return fileMode != FileMode.GITLINK && fileMode != FileMode.SYMLINK;
