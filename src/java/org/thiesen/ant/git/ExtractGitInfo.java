@@ -50,67 +50,67 @@ public class ExtractGitInfo extends Task {
 
     @Override
     public void execute() throws BuildException {
-        if ( getBaseDir() == null ) {
-            throw new BuildException("baseDir property must be set." );
+        if (getBaseDir() == null) {
+            throw new BuildException("baseDir property must be set.");
         }
 
-        if ( !getBaseDir().exists() ) {
-            throw new BuildException("Base dir " + getBaseDir().getAbsolutePath() + " does not exist!" );
+        if (!getBaseDir().exists()) {
+            throw new BuildException("Base dir " + getBaseDir().getAbsolutePath() + " does not exist!");
         }
 
 
         try {
             final StopWatch watch = new StopWatch();
             watch.start();
-            final GitInfo info = GitInfoExtractor.extractInfo( getBaseDir() );
+            final GitInfo info = GitInfoExtractor.extractInfo(getBaseDir());
             watch.stop();
-            
-            log( "This is GitAnt " + loadVersion() + " - 2009-" + Calendar.getInstance().get( Calendar.YEAR ) + " by Marcus Thiesen (marcus@thiesen.org) and contributors" );
-            log( "Using " + loadJGitVersion() );
-            log( "Data collection took " + watch );
 
-            
-            if ( isDisplayInfo() ) {
-                log( info.getDisplayString(), Project.MSG_INFO );
+            log("This is GitAnt " + loadVersion());
+            log("Using " + loadJGitVersion());
+            log("Data collection took " + watch);
+
+
+            if (isDisplayInfo()) {
+                log(info.getDisplayString(), Project.MSG_INFO);
             }
 
             final Project currentProject = getProject();
-            if ( currentProject != null ) {
-                exportProperties( info, currentProject );
+            if (currentProject != null) {
+                exportProperties(info, currentProject);
             }
 
-        } catch ( final IOException e ) {
+        } catch (final IOException e) {
             throw new BuildException(e);
         }
     }
 
-    private void exportProperties( final GitInfo info, final Project currentProject ) {
-        currentProject.setProperty( prefixName("branch" ), info.getCurrentBranch() );
-        currentProject.setProperty( prefixName("workingcopy.dirty" ), String.valueOf( info.isWorkingCopyDirty() ) );
-        currentProject.setProperty( prefixName("commit" ), info.getLastCommit() );
-        currentProject.setProperty( prefixName("commit.short" ), info.getLastCommitShort() );
-        currentProject.setProperty( prefixName("commit.date" ), DateFormatUtils.format( info.getLastCommitDate(), "EEE, dd MMM yyyy HH:mm:ss Z" ) );
-        currentProject.setProperty( prefixName("tag" ), info.getLastTagName() );
-        currentProject.setProperty( prefixName("tag.hash" ), info.getLastTagHash() );
-        currentProject.setProperty( prefixName("tag.dirty" ), String.valueOf( info.isLastTagDirty() ) );
-        currentProject.setProperty( prefixName("tag.author.name" ), info.getLastTagAuthorName() );
-        currentProject.setProperty( prefixName("tag.author.email" ), info.getLastTagAuthorEmail() );
-        currentProject.setProperty( prefixName("dirty" ), String.valueOf( info.isWorkingCopyDirty() || info.isLastTagDirty() ) );
-        currentProject.setProperty( prefixName("version" ), info.getVersionPostfix() );
+    private void exportProperties(final GitInfo info, final Project currentProject) {
+        currentProject.setProperty(prefixName("branch"), info.getCurrentBranch());
+        currentProject.setProperty(prefixName("workingcopy.dirty"), String.valueOf(info.isWorkingCopyDirty()));
+        currentProject.setProperty(prefixName("commit"), info.getLastCommit());
+        currentProject.setProperty(prefixName("commit.short"), info.getLastCommitShort());
+        currentProject.setProperty(prefixName("commit.date"), DateFormatUtils.format(info.getLastCommitDate(), "EEE, dd MMM yyyy HH:mm:ss Z"));
+        currentProject.setProperty(prefixName("tag"), info.getLastTagName());
+        currentProject.setProperty(prefixName("tag.hash"), info.getLastTagHash());
+        currentProject.setProperty(prefixName("tag.dirty"), String.valueOf(info.isLastTagDirty()));
+        currentProject.setProperty(prefixName("tag.author.name"), info.getLastTagAuthorName());
+        currentProject.setProperty(prefixName("tag.author.email"), info.getLastTagAuthorEmail());
+        currentProject.setProperty(prefixName("dirty"), String.valueOf(info.isWorkingCopyDirty() || info.isLastTagDirty()));
+        currentProject.setProperty(prefixName("version"), info.getVersionPostfix());
     }
 
     private String loadVersion() {
         try {
             final Enumeration<URL> resources = getClass().getClassLoader()
-            .getResources("META-INF/MANIFEST.MF");
+                    .getResources("META-INF/MANIFEST.MF");
             while (resources.hasMoreElements()) {
 
                 final Manifest manifest = new Manifest(resources.nextElement().openStream());
 
                 final Attributes mainAttributes = manifest.getMainAttributes();
 
-                if ("gitant".equalsIgnoreCase( mainAttributes.getValue( "Project-Name" ) ) ) {
-                    return mainAttributes.getValue( "Git-Version" );
+                if ("gitant".equalsIgnoreCase(mainAttributes.getValue("Project-Name"))) {
+                    return mainAttributes.getValue("Project-Version");
                 }
 
             }
@@ -125,15 +125,15 @@ public class ExtractGitInfo extends Task {
     private String loadJGitVersion() {
         try {
             final Enumeration<URL> resources = getClass().getClassLoader()
-            .getResources("META-INF/MANIFEST.MF");
+                    .getResources("META-INF/MANIFEST.MF");
             while (resources.hasMoreElements()) {
 
                 final Manifest manifest = new Manifest(resources.nextElement().openStream());
 
                 final Attributes mainAttributes = manifest.getMainAttributes();
 
-                if ("org.eclipse.jgit".equalsIgnoreCase( mainAttributes.getValue( "Bundle-SymbolicName" ) ) ) {
-                    return mainAttributes.getValue( "Implementation-Title" ) + " " + mainAttributes.getValue( "Implementation-Version" );
+                if ("org.eclipse.jgit".equalsIgnoreCase(mainAttributes.getValue("Bundle-SymbolicName"))) {
+                    return mainAttributes.getValue("Implementation-Title") + " " + mainAttributes.getValue("Implementation-Version");
                 }
 
             }
@@ -147,30 +147,30 @@ public class ExtractGitInfo extends Task {
     }
 
 
-    private String prefixName( final String string ) {
+    private String prefixName(final String string) {
         final String propertyPrefix = getPropertyPrefix();
 
-        if (StringUtils.isNotBlank( propertyPrefix ) ) {
-            return STATIC_PREFIX + propertyPrefix  + "." + string;
+        if (StringUtils.isNotBlank(propertyPrefix)) {
+            return STATIC_PREFIX + propertyPrefix + "." + string;
         }
 
         return STATIC_PREFIX + string;
 
     }
 
-    public void setBaseDir( final File baseDir ) {
+    public void setBaseDir(final File baseDir) {
         _baseDir = baseDir;
     }
 
-    public static void main( final String... args ) {
+    public static void main(final String... args) {
         final ExtractGitInfo vf = new ExtractGitInfo();
-        vf.setBaseDir( new File("/home/marcus/workspace/gitant/.git") );
-        vf.setDisplayInfo( true );
+        vf.setBaseDir(new File(args[0]));
+        vf.setDisplayInfo(true);
 
         vf.execute();
     }
 
-    public void setPropertyPrefix( final String propertyPrefix ) {
+    public void setPropertyPrefix(final String propertyPrefix) {
         _propertyPrefix = propertyPrefix;
     }
 
@@ -178,7 +178,7 @@ public class ExtractGitInfo extends Task {
         return _propertyPrefix;
     }
 
-    public void setDisplayInfo( final boolean displayInfo ) {
+    public void setDisplayInfo(final boolean displayInfo) {
         _displayInfo = displayInfo;
     }
 
